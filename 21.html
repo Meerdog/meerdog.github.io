@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>21 Knob: Skirmish Simulator V14</title>
+    <title>21 Knob: High-Intensity V15</title>
     <style>
         :root {
             --lane-L: #b5d0f5; --lane-C: #f0f0f0; --lane-R: #faeab0;
@@ -36,9 +36,9 @@
         .player-card h3 { margin: 0 0 5px 0; font-size: 1.1rem; text-transform: uppercase; }
         .score { font-size: 1.8rem; font-weight: bold; line-height: 1; margin-bottom: 5px; }
         .stam-text { font-size: 1.2rem; font-weight: bold; color: #06d6a0; }
-        .stam-text.low { color: #d62828; }
+        .stam-text.low { color: #f72585; }
         .stam-max { font-size: 0.9rem; color: #888; }
-        .lactic-warning { color: #d62828; font-weight: bold; font-size: 0.8rem; animation: pulse 1.5s infinite; }
+        .fatigue-text { color: #f72585; font-size: 0.7rem; font-weight: bold; display: none; }
 
         .btn-icon {
             background: #ff9f1c; color: #000; font-weight: bold; font-size: 1.2rem;
@@ -46,8 +46,6 @@
             cursor: pointer; box-shadow: 0 4px 0 #cc7a00; transition: transform 0.1s;
             display: flex; align-items: center; justify-content: center;
         }
-        .btn-icon:active { transform: translateY(4px); box-shadow: none; }
-        .btn-group { display: flex; flex-direction: column; gap: 8px; }
 
         /* --- PLAYING FIELD --- */
         .board-wrapper {
@@ -57,9 +55,8 @@
             position: relative;
         }
 
-        /* --- SVG HEX GRID & TOKENS --- */
+        /* --- SVG GRID & TOKENS --- */
         .svg-container { position: relative; background: #fff; border-radius: 4px;}
-        
         .token {
             position: absolute; border-radius: 50%; z-index: 10;
             display: flex; align-items: center; justify-content: center;
@@ -71,7 +68,7 @@
         .p2 { width: 30px; height: 30px; background: var(--p2-color); border: 2px solid white; margin: -15px 0 0 -15px; }
         .ball {
             width: 14px; height: 14px; background: radial-gradient(circle at 30% 30%, #ffd166, #ff9f1c);
-            z-index: 15; transition: transform 1.0s cubic-bezier(0.34, 1.56, 0.64, 1); 
+            z-index: 15; transition: transform 0.9s cubic-bezier(0.34, 1.56, 0.64, 1); 
             margin: -7px 0 0 -7px; box-shadow: 0 4px 10px rgba(0,0,0,0.6);
         }
 
@@ -92,125 +89,43 @@
             text-align: center; font-size: 1.1rem; z-index: 60; display: none;
             box-shadow: 0 10px 30px rgba(0,0,0,0.8); line-height: 1.4;
         }
-        .action-popup b { color: #ff9f1c; font-size: 1.2rem; display: block; margin-bottom: 5px;}
-        .acid-text { color: #f72585; font-weight: bold; background: rgba(247, 37, 133, 0.2); padding: 4px; border-radius: 4px; display: inline-block; margin-top: 5px; border: 1px solid #f72585;}
-        .heal-text { color: #06d6a0; font-weight: bold; background: rgba(6, 214, 160, 0.2); padding: 4px; border-radius: 4px; display: inline-block; margin-top: 5px; border: 1px solid #06d6a0;}
 
-        /* --- CONTROLS SECTION --- */
-        .controls-wrapper {
-            background: #2b2b36; padding: 15px; border-radius: 8px; border: 2px solid #444;
-            display: flex; flex-direction: column; gap: 12px;
-        }
-
-        /* --- 3D WOODEN DOOR UI --- */
+        /* --- DOOR UI --- */
         .door-ui {
-            width: 100%; height: 210px; background: #6e4125; border: 14px solid #3b2212; 
+            width: 100%; height: 200px; background: #6e4125; border: 14px solid #3b2212; 
             border-radius: 6px; display: grid; grid-template-columns: 1fr 1.3fr 1fr; 
-            grid-template-rows: 2fr 1fr; gap: 8px; padding: 10px; 
-            position: relative; cursor: pointer; 
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.7), 0 8px 15px rgba(0,0,0,0.4);
-            margin-bottom: 5px;
+            grid-template-rows: 2fr 1fr; gap: 8px; padding: 10px; position: relative; cursor: pointer; 
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.7), 0 8px 15px rgba(0,0,0,0.4); margin-bottom: 5px;
         }
-        .door-ui.disabled { pointer-events: none; opacity: 0.6; filter: grayscale(30%); }
-        .door-ui::after {
-            content: "FRAME (TN 5)"; position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
-            background: #3b2212; color: #dcb38a; font-size: 0.75rem; padding: 2px 12px;
-            font-weight: bold; letter-spacing: 1px; border-radius: 0 0 4px 4px;
-        }
+        .door-ui.disabled { pointer-events: none; opacity: 0.6; }
         .door-panel {
-            border: 2px solid #522f18; border-radius: 4px;
-            display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
-            font-weight: 900; color: #fff; text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-            box-shadow: inset 2px 2px 6px rgba(255,255,255,0.15), inset -3px -3px 8px rgba(0,0,0,0.4);
-            transition: all 0.15s ease; font-size: 1rem;
+            border: 2px solid #522f18; border-radius: 4px; display: flex; align-items: center; justify-content: center;
+            font-weight: 900; color: #fff; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); transition: all 0.15s ease;
         }
         .dp-left { background: linear-gradient(135deg, #5c7b9e, #3a506b); } 
         .dp-center { background: linear-gradient(135deg, #a66a38, #7a461e); } 
         .dp-right { background: linear-gradient(135deg, #5c7b9e, #3a506b); } 
         .dp-bottom { background: linear-gradient(135deg, #447a6d, #254a41); grid-column: 1 / span 3; }
-        
-        .door-panel:hover { filter: brightness(1.2); transform: scale(1.02); z-index: 5; }
-        .door-panel.selected { border: 3px solid #ff9f1c; box-shadow: 0 0 15px #ff9f1c; transform: scale(1.03); z-index: 5; }
-        .frame-selected { box-shadow: inset 0 0 0 6px #9b5de5, 0 8px 15px rgba(0,0,0,0.4); border-color: #9b5de5; }
+        .door-panel.selected { border: 3px solid #ff9f1c; box-shadow: 0 0 15px #ff9f1c; }
         
         .door-knob {
             position: absolute; right: 30%; top: 40%; transform: translate(50%, -50%);
-            width: 70px; height: 70px; background: radial-gradient(circle at 35% 35%, #fff7cc, #d4af37, #8c7322);
-            border-radius: 50%; border: 3px solid #544411; box-shadow: 4px 4px 10px rgba(0,0,0,0.7), inset -2px -2px 6px rgba(0,0,0,0.4);
-            display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            font-size: 1.1rem; color: #222; font-weight: 900; line-height: 1.1; 
-            text-shadow: 1px 1px 0px rgba(255,255,255,0.5); z-index: 10; transition: all 0.2s ease;
+            width: 60px; height: 60px; background: radial-gradient(circle at 35% 35%, #fff7cc, #d4af37, #8c7322);
+            border-radius: 50%; border: 3px solid #544411; display: flex; align-items: center; justify-content: center; 
+            font-size: 1rem; color: #222; font-weight: 900; z-index: 10;
         }
-        .door-knob span { font-size: 0.75rem; font-weight: bold; }
-        .door-knob:hover { transform: translate(50%, -50%) scale(1.1); }
-        .knob-selected { border-color: #fff; box-shadow: 0 0 25px #f72585, inset 0 0 10px #fff; transform: translate(50%, -50%) scale(1.15); }
+        .knob-selected { border-color: #fff; box-shadow: 0 0 25px #f72585; transform: translate(50%, -50%) scale(1.1); }
 
-        /* SELECTIONS & ODDS */
-        .decision-panel {
-            background: #1e1e24; padding: 15px; border-radius: 8px; border: 1px solid #444;
-            display: flex; flex-direction: column; gap: 10px;
-        }
-        .odds-display {
-            background: #111; padding: 12px; border-radius: 6px; border-left: 5px solid #ff9f1c;
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        
+        /* --- CONTROLS --- */
+        .controls-wrapper { background: #2b2b36; padding: 15px; border-radius: 8px; border: 2px solid #444; }
+        .decision-panel { background: #1e1e24; padding: 12px; border-radius: 8px; display: flex; flex-direction: column; gap: 10px; }
+        .odds-display { background: #111; padding: 10px; border-radius: 6px; border-left: 5px solid #ff9f1c; display: flex; justify-content: space-between; align-items: center; }
         select, button { width: 100%; padding: 14px; font-size: 1.05rem; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; }
-        select { background: #333; color: white; border: 1px solid #555; }
-        button.primary { background: #ff9f1c; color: #000; text-transform: uppercase; box-shadow: 0 4px 0 #cc7a00;}
-        button.primary:active { transform: translateY(4px); box-shadow: none; }
-        button:disabled { background: #555; color: #888; box-shadow: none; cursor: not-allowed; }
-
-        .log { background: #111; height: 100px; overflow-y: auto; padding: 10px; font-size: 0.9rem; border-radius: 6px; color: #ccc; border: 1px solid #333;}
-
-        /* --- MODALS --- */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 100;
-        }
-        .modal-content {
-            background: #2b2b36; padding: 25px; border-radius: 12px; width: 90%; max-width: 400px;
-            border: 4px solid var(--wood); font-size: 1rem;
-        }
-        .modal-content h2 { color: #ff9f1c; margin-top: 0; }
-        .slider-group { margin-bottom: 15px; }
-        .slider-group label { display: block; margin-bottom: 5px; color: #ccc; }
-        .slider-group input { width: 100%; accent-color: #ff9f1c; }
-        .close-btn { background: #d62828; color: white; margin-top: 15px; padding: 12px;}
-        
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+        button.primary { background: #ff9f1c; color: #000; text-transform: uppercase; }
+        .log { background: #111; height: 100px; overflow-y: auto; padding: 10px; font-size: 0.9rem; border-radius: 6px; color: #ccc; margin-top: 10px;}
     </style>
 </head>
 <body>
-
-<div class="modal-overlay" id="settings-modal">
-    <div class="modal-content">
-        <h2>⚙️ Tweak Skirmish Mechanics</h2>
-        <div class="slider-group">
-            <label>Average Bounce Depth (Rows 1-15)</label>
-            <input type="range" id="cfg-depth" min="2" max="14" value="6" oninput="document.getElementById('val-depth').innerText=this.value">
-            <div style="text-align: right; color: #ff9f1c; font-weight: bold;" id="val-depth">6 (Skirmish Bias)</div>
-        </div>
-        <div class="slider-group">
-            <label>Lateral Scatter Spread (Chaos)</label>
-            <input type="range" id="cfg-scatter" min="0" max="3" value="1" oninput="document.getElementById('val-scatter').innerText=this.value">
-            <div style="text-align: right; color: #ff9f1c; font-weight: bold;" id="val-scatter">1 Hex</div>
-        </div>
-        <button class="close-btn" onclick="toggleModal('settings-modal')">Save & Close</button>
-    </div>
-</div>
-
-<div class="modal-overlay" id="rules-modal">
-    <div class="modal-content">
-        <h2>📖 Skirmish Rules Update</h2>
-        <ul>
-            <li><b>Lactic Acid Damage:</b> If you aim for the Glory Knob and miss, your <b>Max Stamina is permanently reduced by 1</b> for the rest of the game!</li>
-            <li><b>Second Wind (Adrenaline):</b> If you explicitly aim for the Glory Knob and HIT IT, you score 3 points AND heal 1 Lactic Acid (Max Stamina +1).</li>
-            <li><b>Pipeline Knob Nerf:</b> Accidental Knobs from the Center Lane no longer trigger if you use a safe Power 1 Lob. Accidental Knobs grant 3 points, but do <i>not</i> trigger a Second Wind heal.</li>
-        </ul>
-        <button class="close-btn" onclick="toggleModal('rules-modal')">Close</button>
-    </div>
-</div>
 
 <div class="app-container">
     
@@ -218,25 +133,19 @@
         <div class="player-card">
             <h3 style="color: var(--p1-color)">MINTZY</h3>
             <div class="score" id="p1-score">0</div>
-            <div>Stam: <span class="stam-text" id="p1-stam">10</span><span class="stam-max">/<span id="p1-max">10</span></span></div>
-            <div id="p1-warn" class="lactic-warning" style="display:none">LACTIC ACID!</div>
+            <div>Stam: <span class="stam-text" id="p1-stam">10</span><span class="stam-max">/10</span></div>
+            <div id="p1-fatigue" class="fatigue-text">FATIGUED (-1)</div>
         </div>
-        
-        <div class="btn-group">
-            <button class="btn-icon" onclick="toggleModal('rules-modal')">?</button>
-            <button class="btn-icon" onclick="toggleModal('settings-modal')" style="background: #ccc;">⚙️</button>
-        </div>
-
+        <button class="btn-icon" onclick="toggleModal('rules-modal')">?</button>
         <div class="player-card">
             <h3 style="color: var(--p2-color)">TANGO</h3>
             <div class="score" id="p2-score">0</div>
-            <div>Stam: <span class="stam-text" id="p2-stam">10</span><span class="stam-max">/<span id="p2-max">10</span></span></div>
-            <div id="p2-warn" class="lactic-warning" style="display:none">LACTIC ACID!</div>
+            <div>Stam: <span class="stam-text" id="p2-stam">10</span><span class="stam-max">/10</span></div>
+            <div id="p2-fatigue" class="fatigue-text">FATIGUED (-1)</div>
         </div>
     </div>
 
     <div class="board-wrapper">
-        <div style="font-weight: bold; color: #8b5a2b; margin-bottom: 5px; text-transform: uppercase;">The Corridor</div>
         <div class="svg-container" id="board-container">
             <div id="dice-on-board" class="dice-overlay">?</div>
             <div id="action-popup" class="action-popup"></div>
@@ -247,14 +156,12 @@
     </div>
 
     <div class="controls-wrapper" id="controls-ui">
-        
         <div class="door-ui" id="door-ui" onclick="selectFrame(event)">
-            <div class="door-panel dp-left" id="dp-Left" onclick="setTarget('Left', event)">LEFT<br><span style="font-size:0.75rem">(TN 3)</span></div>
-            <div class="door-panel dp-center selected" id="dp-Center" onclick="setTarget('Center', event)">CENTER<br><span style="font-size:0.75rem">(TN 2)</span></div>
-            <div class="door-panel dp-right" id="dp-Right" onclick="setTarget('Right', event)">RIGHT<br><span style="font-size:0.75rem">(TN 3)</span></div>
-            <div class="door-panel dp-bottom" id="dp-Bottom" onclick="setTarget('Bottom', event)">DROP SHOT (TN 4+)</div>
-            
-            <div class="door-knob" id="dp-Knob" onclick="setTarget('Knob', event)">KNOB<br><span>(TN 6)</span></div>
+            <div class="door-panel dp-left" id="dp-Left" onclick="setTarget('Left', event)">LEFT</div>
+            <div class="door-panel dp-center selected" id="dp-Center" onclick="setTarget('Center', event)">CENTER</div>
+            <div class="door-panel dp-right" id="dp-Right" onclick="setTarget('Right', event)">RIGHT</div>
+            <div class="door-panel dp-bottom" id="dp-Bottom" onclick="setTarget('Bottom', event)">DROP SHOT</div>
+            <div class="door-knob" id="dp-Knob" onclick="setTarget('Knob', event)">KNOB</div>
         </div>
 
         <div class="decision-panel">
@@ -266,8 +173,8 @@
 
             <div class="odds-display">
                 <div style="color: #ccc; line-height: 1.4;">
-                    <b><span id="ui-turn-name" style="color: var(--p1-color)">MINTZY</span></b><br>
-                    Cost: <span id="ui-cost" style="color: white; font-weight: bold;">0</span> Stamina
+                    <b><span id="ui-turn-name">MINTZY</span>'s Swing</b><br>
+                    Run Cost: <span id="ui-cost" style="font-weight: bold;">0</span> Stamina
                 </div>
                 <div style="text-align: right;">
                     <div style="font-size: 0.8rem; color: #aaa;">ROLL REQ.</div>
@@ -275,21 +182,14 @@
                 </div>
             </div>
 
-            <button class="primary" onclick="playTurn()" id="btn-shoot">Run & Roll Dice</button>
+            <button class="primary" onclick="playTurn()" id="btn-shoot">Run & Shoot</button>
         </div>
-
-        <div class="log" id="log-box">Second Wind active. Mintzy serves!</div>
-        <select id="sel-p2-mode" style="margin-top: -5px;">
-            <option value="human">Pass & Play</option>
-            <option value="ai-balanced" selected>Play vs. AI</option>
-        </select>
+        <div class="log" id="log-box">High Intensity Skirmish Loaded! 5-6 shot target.</div>
     </div>
 </div>
 
 <script>
-    // --- NATIVE SVG RENDERING ---
     const R = 20, W = Math.sqrt(3)*R, H = 2*R, COLS = 7, ROWS = 15; 
-
     let s = {
         p1: { id: 'Mintzy', class: 'p1', x: 3, y: 14, score: 0, stam: 10, maxStam: 10 },
         p2: { id: 'Tango', class: 'p2', x: 3, y: 12, score: 0, stam: 10, maxStam: 10 },
@@ -297,13 +197,7 @@
         active: 1, isAnimating: false, target: 'Center'
     };
 
-    function toggleModal(id) {
-        let mod = document.getElementById(id);
-        mod.style.display = mod.style.display === 'flex' ? 'none' : 'flex';
-    }
-
     function getHexCenter(c, r) { return { x: (c*W) + (r%2!==0 ? W/2 : 0) + W/2, y: (r*H*0.75) + H/2 }; }
-    
     function getHexPoints(cx, cy) {
         let pts = [];
         for(let i=0; i<6; i++) pts.push(`${cx + R * Math.cos(Math.PI/180 * (60*i-30))},${cy + R * Math.sin(Math.PI/180 * (60*i-30))}`);
@@ -314,7 +208,6 @@
         const container = document.getElementById('board-container');
         let totalW = (COLS*W)+(W/2), totalH = (ROWS*H*0.75)+(H*0.25);
         container.style.width = totalW + 'px'; container.style.height = totalH + 'px';
-
         let svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
         svg.setAttribute("width", totalW); svg.setAttribute("height", totalH);
         svg.style.position = "absolute"; svg.style.top = "0"; svg.style.left = "0"; svg.style.zIndex = "1";
@@ -325,47 +218,123 @@
                 let fill = c < 2 ? '#b5d0f5' : (c > 4 ? '#faeab0' : '#f0f0f0');
                 let poly = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
                 poly.setAttribute("points", getHexPoints(center.x, center.y));
-                poly.setAttribute("fill", fill); poly.setAttribute("stroke", "#888"); poly.setAttribute("stroke-width", "1.5");
-                svg.appendChild(poly);
+                poly.setAttribute("fill", fill); poly.setAttribute("stroke", "#bbb"); svg.appendChild(poly);
             }
         }
-
-        let returnLineY = getHexCenter(0, 7).y;
-        let rLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
-        rLine.setAttribute("x1", "0"); rLine.setAttribute("y1", returnLineY);
-        rLine.setAttribute("x2", totalW); rLine.setAttribute("y2", returnLineY);
-        rLine.setAttribute("stroke", "#333"); rLine.setAttribute("stroke-width", "3"); rLine.setAttribute("stroke-dasharray", "8,4");
-        svg.appendChild(rLine);
-
-        let serveLineY = getHexCenter(0, 13).y - H/2;
-        let sLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
-        sLine.setAttribute("x1", "0"); sLine.setAttribute("y1", serveLineY);
-        sLine.setAttribute("x2", totalW); sLine.setAttribute("y2", serveLineY);
-        sLine.setAttribute("stroke", "#fca311"); sLine.setAttribute("stroke-width", "5");
-        svg.appendChild(sLine);
-
         container.insertBefore(svg, container.firstChild);
     }
 
-    function getPixelCoords(c, r, type = 'token') {
-        if(type === 'door') return { x: 120, y: -40 }; 
-        return getHexCenter(c, r); 
-    }
-
     function updateTokens() {
-        let p1 = getPixelCoords(s.p1.x, s.p1.y), p2 = getPixelCoords(s.p2.x, s.p2.y), b = getPixelCoords(s.ball.x, s.ball.y, 'ball');
+        let p1 = getHexCenter(s.p1.x, s.p1.y), p2 = getHexCenter(s.p2.x, s.p2.y), b = getHexCenter(s.ball.x, s.ball.y);
         document.getElementById('t-p1').style.transform = `translate(${p1.x}px, ${p1.y}px)`;
         document.getElementById('t-p2').style.transform = `translate(${p2.x}px, ${p2.y}px)`;
         document.getElementById('t-ball').style.transform = `translate(${b.x}px, ${b.y}px)`;
     }
 
-    function selectFrame(e) { if (e.target.id === 'door-ui') setTarget('Frame', null); }
-    
     function setTarget(targetZone, event) {
         if(event) event.stopPropagation();
-        if(s.isAnimating || (s.active === 2 && document.getElementById('sel-p2-mode').value !== 'human')) return;
-        
+        if(s.isAnimating) return;
         s.target = targetZone;
         document.querySelectorAll('.door-panel').forEach(el => el.classList.remove('selected'));
-        document.getElementById('door-ui').classList.remove('frame-selected');
-        document.getElementById('dp-Knob').classList.remov
+        document.getElementById('dp-Knob').classList.remove('knob-selected');
+        if (targetZone === 'Knob') document.getElementById('dp-Knob').classList.add('knob-selected');
+        else document.getElementById('dp-'+targetZone).classList.add('selected');
+        updateOdds();
+    }
+
+    function updateOdds() {
+        let p = s.active === 1 ? s.p1 : s.p2;
+        let dist = Math.max(Math.abs(p.x - s.ball.x), Math.abs(p.y - s.ball.y));
+        let cost = Math.max(0, dist - s.ball.freeMv);
+        document.getElementById('ui-cost').innerText = cost;
+        
+        let tnBase = { 'Left':3, 'Center':2, 'Right':3, 'Bottom':4, 'Frame':5, 'Knob':6 }[s.target];
+        let power = parseInt(document.getElementById('sel-power').value);
+        let mod = 0;
+        if(cost >= 2) mod -= 1; // FASTER EXHAUSTION
+        if(p.stam <= 5) mod -= 1; // FATIGUE PENALTY
+        if(s.ball.state === 'High' && power === 3) mod += 0;
+        else if(power === 3) mod -= 2;
+        else if(power === 1) mod += 1;
+        
+        document.getElementById('ui-tn').innerText = (tnBase - mod) + '+';
+        document.getElementById('ui-turn-name').innerText = p.id.toUpperCase();
+    }
+
+    function renderUI() {
+        document.getElementById('p1-score').innerText = s.p1.score; document.getElementById('p2-score').innerText = s.p2.score;
+        document.getElementById('p1-stam').innerText = s.p1.stam; document.getElementById('p2-stam').innerText = s.p2.stam;
+        document.getElementById('p1-stam').className = `stam-text ${s.p1.stam <= 4 ? 'low' : ''}`;
+        document.getElementById('p2-stam').className = `stam-text ${s.p2.stam <= 4 ? 'low' : ''}`;
+        document.getElementById('p1-fatigue').style.display = s.p1.stam <= 5 ? 'block' : 'none';
+        document.getElementById('p2-fatigue').style.display = s.p2.stam <= 5 ? 'block' : 'none';
+        updateOdds();
+    }
+
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+    async function playTurn() {
+        if(s.isAnimating) return;
+        s.isAnimating = true; renderUI();
+
+        let p = s.active === 1 ? s.p1 : s.p2, opp = s.active === 1 ? s.p2 : s.p1;
+        let power = parseInt(document.getElementById('sel-power').value);
+        let dist = Math.max(Math.abs(p.x - s.ball.x), Math.abs(p.y - s.ball.y)), cost = Math.max(0, dist - s.ball.freeMv);
+        
+        if (cost > p.stam) { p.stam = 0; power = 1; s.target = 'Center'; } 
+        else { p.stam -= cost; }
+
+        p.x = s.ball.x; p.y = s.ball.y; updateTokens(); await sleep(700); 
+
+        // Dice Roll Animation
+        const dice = document.getElementById('dice-on-board'); dice.style.display = 'flex';
+        let roll = Math.floor(Math.random()*6)+1;
+        for(let d of [50,100,200]) { dice.innerText = Math.floor(Math.random()*6)+1; await sleep(d); }
+        dice.innerText = roll; await sleep(600); dice.style.display = 'none';
+
+        let mod = 0;
+        if(cost >= 2) mod -= 1;
+        if(p.stam <= 5) mod -= 1;
+        if(s.ball.state === 'High' && power === 3) mod += 0;
+        else if(power === 3) mod -= 2;
+        else if(power === 1) mod += 1;
+        
+        let total = roll + mod;
+        let tn = { 'Left':3, 'Center':2, 'Right':3, 'Bottom':4, 'Frame':5, 'Knob':6 }[s.target];
+
+        // Hit Result
+        if (total <= 0) { handleScore(opp); }
+        else if (total < tn) { s.ball.state = 'High'; s.ball.freeMv = 3; scatter(8, 12, 3); s.active = s.active === 1 ? 2 : 1; }
+        else {
+            if (s.target === 'Knob') { handleScore(p, 3); }
+            else {
+                s.ball.state = s.target === 'Bottom' ? 'Low' : 'Mid';
+                s.ball.freeMv = power === 1 ? 3 : (power === 2 ? 1 : 0); // NERFED POWER 2
+                scatter(s.target === 'Bottom' ? 1 : 4, s.target === 'Bottom' ? 3 : 7, s.target === 'Left' ? 5 : (s.target === 'Right' ? 1 : 3));
+                s.active = s.active === 1 ? 2 : 1;
+            }
+        }
+
+        updateTokens(); s.isAnimating = false; renderUI();
+        if (s.active === 2) triggerAI();
+    }
+
+    function scatter(minY, maxY, tgtX) {
+        s.ball.y = Math.floor(Math.random() * (maxY - minY + 1)) + minY;
+        s.ball.x = Math.max(0, Math.min(6, tgtX + (Math.floor(Math.random() * 3) - 1)));
+    }
+
+    function handleScore(winner, pts = 1) {
+        winner.score = Math.min(21, winner.score + pts);
+        s.p1.stam = s.p1.maxStam; s.p2.stam = s.p2.maxStam;
+        s.ball.x = 3; s.ball.y = 14; s.active = winner === s.p1 ? 1 : 2;
+    }
+
+    async function triggerAI() {
+        await sleep(800); setTarget(Math.random() > 0.7 ? 'Bottom' : 'Left', null); playTurn();
+    }
+
+    buildSVGBoard(); updateTokens(); renderUI();
+</script>
+</body>
+</html>
