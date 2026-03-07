@@ -3,92 +3,201 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>21 Knob: Skirmish V20</title>
+    <title>21 Knob: Master Edition V21</title>
     <style>
         :root {
             --p1-color: #4361ee; --p2-color: #f72585;
-            --wood-dark: #3b2212; --foyer-bg: #e2e2e2;
-            --sidebar-w: 180px;
+            --wood: #8b5a2b; --wood-dark: #3b2212; --bg-dark: #1e1e24;
+            --hex-w: 32px; --hex-h: 24px;
         }
 
         * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background-color: #1e1e24; color: #fff; margin: 0; padding: 0; height: 100vh; display: flex; overflow: hidden; }
 
-        /* --- LEFT SIDE: THE FOYER SKIRMISH --- */
-        .game-viewport { flex-grow: 1; display: flex; flex-direction: column; height: 100%; border-right: 2px solid #444; padding: 10px; align-items: center; justify-content: flex-start; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg-dark); color: #fff;
+            margin: 0; padding: 10px;
+            display: flex; justify-content: center;
+        }
+
+        .app-container {
+            display: flex; flex-direction: column; 
+            gap: 12px; width: 100%; max-width: 450px; margin: 0 auto;
+        }
+
+        /* --- DASHBOARDS --- */
+        .header-row {
+            display: flex; justify-content: space-between; width: 100%;
+            align-items: center; background: #2b2b36; padding: 10px 15px;
+            border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            border: 2px solid #444;
+        }
+        .player-card { flex: 1; text-align: center; }
+        .player-card h3 { margin: 0 0 5px 0; font-size: 1.1rem; text-transform: uppercase; }
+        .score { font-size: 1.8rem; font-weight: bold; line-height: 1; margin-bottom: 5px; }
+        .stam-text { font-size: 1.2rem; font-weight: bold; color: #06d6a0; }
+        .stam-text.low { color: #f72585; }
+        .stam-max { font-size: 0.9rem; color: #888; }
+        .fatigue-warn { color: #f72585; font-size: 0.7rem; font-weight: bold; display: none; text-transform: uppercase; }
+
+        .btn-group { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+        .btn-icon {
+            background: #ff9f1c; color: #000; font-weight: bold; font-size: 1.2rem;
+            width: 40px; height: 40px; border-radius: 50%; border: none;
+            cursor: pointer; box-shadow: 0 4px 0 #cc7a00; display: flex; align-items: center; justify-content: center;
+        }
+        .btn-icon:active { transform: translateY(4px); box-shadow: none; }
+
+        /* --- PLAYING FIELD --- */
+        .door-indicator {
+            background: var(--wood-dark); color: #eab676; text-align: center; font-weight: 900;
+            padding: 4px; border-radius: 4px 4px 0 0; border: 4px solid var(--wood); border-bottom: none;
+            letter-spacing: 4px; text-transform: uppercase; font-size: 0.9rem;
+        }
+        .board-wrapper {
+            background: #e2e2e2; padding: 15px 0; border-radius: 0 0 8px 8px;
+            border: 4px solid var(--wood); box-shadow: inset 0 0 20px rgba(0,0,0,0.2);
+            display: flex; justify-content: center; position: relative; overflow: hidden;
+        }
+        .svg-container { position: relative; }
         
-        /* The Realistic Door Standee */
-        .door-target {
-            width: 190px; height: 160px; background-color: var(--wood-dark); border-radius: 8px; position: relative;
-            margin-bottom: 20px; border: 6px solid #1a110a; 
-            box-shadow: 0 8px 15px rgba(0,0,0,0.5), inset 0 0 15px rgba(0,0,0,0.8);
-            background-image: linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-            background-size: 20px 20px;
+        .token {
+            position: absolute; border-radius: 50%; z-index: 20;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.5);
+            transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+            top: 0; left: 0; 
         }
-        .door-target::after { content: ""; position: absolute; left: 10%; top: 5%; width: 5px; height: 90%; background: #2b180c; border-radius: 2px; }
-        .door-grid {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
-            padding: 5px; opacity: 0.9;
-        }
-        .door-cell { display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: bold; cursor: pointer; color: transparent; border-radius: 2px; transition: all 0.1s; }
-        .door-cell.selected { background-color: rgba(255, 159, 28, 0.4); border: 2px solid #ff9f1c; box-shadow: 0 0 10px #ff9f1c; z-index: 5; color: white; }
-        .door-cell:not(.selected):hover { background-color: rgba(255,255,255,0.1); }
-
-        /* knob on LEFT MIDDLE */
-        .knob-physical {
-            position: absolute; left: 10%; top: 50%; transform: translate(-50%, -50%);
-            width: 48px; height: 48px; background: radial-gradient(circle, #ffe066, #d4af37, #8c7322);
-            border-radius: 50%; border: 3px solid #333; z-index: 10; display: flex; align-items: center; justify-content: center;
-            font-size: 0.6rem; color: #000; font-weight: 900; cursor: pointer; text-transform: uppercase;
-        }
-        .knob-physical.selected { border-color: #fff; box-shadow: 0 0 20px #f72585; transform: translate(-50%, -50%) scale(1.05); }
-
-        /* Pinned Foyer Board */
-        .board-pinned {
-            flex-grow: 1; background-color: var(--foyer-bg); border-radius: 8px; border: 6px solid var(--wood-dark);
-            overflow: auto; max-height: 70vh; display: flex; justify-content: center; position: relative;
-            box-shadow: inset 0 0 30px rgba(0,0,0,0.2), 0 10px 20px rgba(0,0,0,0.4);
-        }
-        .svg-court { position: relative; }
-        .token { position: absolute; border-radius: 50%; z-index: 20; display: flex; align-items: center; justify-content: center; font-size: 24px; transition: transform 0.5s ease-out; }
         .p1 { width: 44px; height: 44px; background: var(--p1-color); border: 3px solid white; margin: -22px 0 0 -22px; }
         .p2 { width: 44px; height: 44px; background: var(--p2-color); border: 3px solid white; margin: -22px 0 0 -22px; }
-        .ball { width: 14px; height: 14px; background: radial-gradient(circle at 30% 30%, #ffd166, #ff9f1c); z-index: 25; margin: -7px 0 0 -7px; transition: transform 0.7s cubic-bezier(0.1, 0.7, 0.1, 1); }
+        .ball {
+            width: 16px; height: 16px; background: radial-gradient(circle at 30% 30%, #ffd166, #ff9f1c);
+            z-index: 25; transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); 
+            margin: -8px 0 0 -8px; box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+        }
 
-        /* --- RIGHT SIDE: COMMAND SIDEBAR --- */
-        .sidebar { width: var(--sidebar-w); height: 100%; padding: 15px; display: flex; flex-direction: column; gap: 15px; background: #1a1a21; border-left: 1px solid #333; }
-        .command-header { text-align: center; border-bottom: 2px solid #ff9f1c; padding-bottom: 5px; font-weight: bold; text-transform: uppercase; font-size: 0.9rem; }
+        /* --- OVERLAYS --- */
+        .dice-overlay {
+            position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
+            width: 80px; height: 80px; background: white; color: black;
+            border-radius: 12px; display: none; align-items: center; justify-content: center;
+            font-size: 3.5rem; font-weight: bold; z-index: 50;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.6); border: 4px solid #333;
+        }
+
+        /* --- THE 3x3 DOOR TARGET --- */
+        .door-ui {
+            width: 100%; background: #6e4125; border: 8px solid #3b2212; 
+            border-radius: 6px; padding: 6px; position: relative;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.7);
+        }
+        .door-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; height: 160px;
+        }
+        .door-cell {
+            background: #a66a38; border: 2px solid #522f18; border-radius: 2px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            font-size: 0.8rem; font-weight: 900; color: #fff; text-shadow: 1px 1px 2px #000;
+            cursor: pointer; transition: all 0.15s;
+        }
+        .door-cell:hover { filter: brightness(1.2); }
+        .door-cell.selected { border: 3px solid #ff9f1c; box-shadow: 0 0 15px #ff9f1c; background: #c27c41; z-index: 5; }
+        .door-cell span { font-size: 0.65rem; color: #f0f0f0; text-shadow: none; font-weight: normal;}
+
+        /* Knob correctly placed Mid-Left */
+        .knob-physical {
+            position: absolute; left: 16%; top: 50%; transform: translate(-50%, -50%);
+            width: 55px; height: 55px; background: radial-gradient(circle at 35% 35%, #fff7cc, #d4af37, #8c7322);
+            border-radius: 50%; border: 3px solid #544411; box-shadow: 4px 4px 10px rgba(0,0,0,0.7);
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            font-size: 0.8rem; color: #222; font-weight: 900; cursor: pointer; z-index: 10;
+        }
+        .knob-physical.selected { border-color: #fff; box-shadow: 0 0 20px #f72585; transform: translate(-50%, -50%) scale(1.1); }
+
+        /* --- SWING CONTROLS --- */
+        .controls-wrapper { background: #2b2b36; padding: 12px; border-radius: 8px; border: 2px solid #444; display: flex; flex-direction: column; gap: 10px; }
+        select { width: 100%; padding: 12px; font-size: 1rem; border-radius: 6px; background: #111; color: white; border: 1px solid #555; font-weight: bold; }
         
-        .dashboard { display: flex; flex-direction: column; gap: 8px; }
-        .dice-box { background: #fff; color: #000; height: 70px; width: 70px; border-radius: 8px; align-self: center; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 4px solid #ff9f1c; }
-        .dice-val { font-size: 2.2rem; font-weight: 900; line-height: 1; }
-        .dice-label { font-size: 0.6rem; text-transform: uppercase; font-weight: bold; }
+        .action-row { display: flex; gap: 10px; align-items: stretch; }
+        .target-readout {
+            background: #111; padding: 10px; border-radius: 6px; flex: 1;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            border-left: 4px solid #ff9f1c;
+        }
+        .target-readout .val { font-size: 1.5rem; font-weight: 900; color: #ff9f1c; line-height: 1; margin-top: 4px;}
         
-        .cat-stats { background: #2b2b36; padding: 10px; border-radius: 6px; font-size: 0.85rem; }
-        .log-display { flex-grow: 1; background: #000; padding: 8px; font-family: monospace; font-size: 0.75rem; border-radius: 4px; overflow-y: auto; color: #06d6a0; border: 1px solid #333; }
-        
-        .controls-pinned { display: flex; flex-direction: column; gap: 8px; }
-        button { padding: 12px; font-weight: bold; border-radius: 6px; border: none; cursor: pointer; text-transform: uppercase; }
-        .btn-shoot { background: #ff9f1c; color: #000; font-size: 1rem; box-shadow: 0 4px 0 #cc7a00;}
-        .btn-shoot:active { transform: translateY(2px); box-shadow: none; }
-        .btn-sim { background: #444; color: #fff; font-size: 0.7rem; }
+        button.btn-shoot {
+            flex: 2; background: #ff9f1c; color: #000; font-size: 1.2rem; font-weight: 900;
+            border: none; border-radius: 6px; cursor: pointer; box-shadow: 0 4px 0 #cc7a00; text-transform: uppercase;
+        }
+        button.btn-shoot:active { transform: translateY(4px); box-shadow: none; }
+        button:disabled { opacity: 0.5; filter: grayscale(1); }
+
+        /* --- SUMMARY LOG --- */
+        .log-box { background: #000; padding: 12px; border-radius: 6px; border: 1px solid #444; font-family: monospace; color: #06d6a0; font-size: 0.9rem; height: 80px; overflow-y: auto; line-height: 1.4; }
+
+        /* --- MODALS --- */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 100; }
+        .modal-content { background: #2b2b36; padding: 25px; border-radius: 12px; width: 90%; max-width: 400px; border: 4px solid var(--wood); font-size: 1rem; }
+        .modal-content h2 { color: #ff9f1c; margin-top: 0; }
+        .close-btn { width: 100%; padding: 12px; background: #d62828; color: white; border: none; border-radius: 6px; font-weight: bold; margin-top: 15px; cursor: pointer;}
     </style>
 </head>
 <body>
 
-    <div class="game-viewport">
-        <div class="door-target">
-            <div class="door-grid" id="door-ui">
-                <div class="door-cell" onclick="setT('TL',5)">Top-L (TN 5)</div><div class="door-cell" onclick="setT('TM',4)">Top-M (TN 4)</div><div class="door-cell" onclick="setT('TR',5)">Top-R (TN 5)</div>
-                <div class="door-cell" onclick="setT('ML',4)">Mid-L (TN 4)</div><div class="door-cell selected" onclick="setT('MM',2)">CTR (TN 2)</div><div class="door-cell" onclick="setT('MR',4)">Mid-R (TN 4)</div>
-                <div class="door-cell" onclick="setT('BL',5)">Bot-L (TN 5)</div><div class="door-cell" onclick="setT('BM',4)">Bot-M (TN 4)</div><div class="door-cell" onclick="setT('BR',5)">Bot-R (TN 5)</div>
-                <div class="knob-physical" id="kb" onclick="setT('KNOB',6)">GLORY</div>
-            </div>
+<div class="modal-overlay" id="rules-modal">
+    <div class="modal-content">
+        <h2>📖 Skirmish Rules (V21)</h2>
+        <ul>
+            <li><b>Power 1 (Lob):</b> +1 Aim, Opponent gets 3 free hexes.</li>
+            <li><b>Power 2 (Drive):</b> +0 Aim, Opponent gets 1 free hex.</li>
+            <li><b>Power 3 (Bullet):</b> -2 Aim, Opponent gets 0 free hexes.</li>
+            <hr style="border-color:#444">
+            <li><b>Fatigue:</b> At 3 Stamina or lower, you take a -1 penalty.</li>
+            <li><b>Lactic Acid:</b> Miss the Knob? Permanent -1 Max Stamina.</li>
+            <li><b>Unreturnable:</b> If you bounce the ball to a hex the opponent can't reach with their remaining stamina, you win the point!</li>
+        </ul>
+        <button class="close-btn" onclick="toggleModal('rules-modal')">Close</button>
+    </div>
+</div>
+
+<div class="modal-overlay" id="settings-modal">
+    <div class="modal-content">
+        <h2>⚙️ Auto-Play</h2>
+        <p style="color: #aaa;">Let the AI battle it out to test the mechanics.</p>
+        <button class="close-btn" style="background: #ff9f1c; color:#000;" onclick="toggleSim(); toggleModal('settings-modal');" id="btn-sim">START AUTO-SIM</button>
+        <button class="close-btn" onclick="toggleModal('settings-modal')">Close</button>
+    </div>
+</div>
+
+<div class="app-container">
+    
+    <div class="header-row">
+        <div class="player-card">
+            <h3 style="color: var(--p1-color)">MINTZY</h3>
+            <div class="score" id="p1-score">0</div>
+            <div>Stam: <span class="stam-text" id="p1-stam">10</span><span class="stam-max">/<span id="p1-max">10</span></span></div>
+            <div id="p1-warn" class="fatigue-warn">Fatigued (-1)</div>
+        </div>
+        
+        <div class="btn-group">
+            <button class="btn-icon" onclick="toggleModal('rules-modal')">?</button>
+            <button class="btn-icon" onclick="toggleModal('settings-modal')" style="background: #ccc;">⚙️</button>
         </div>
 
-        <div class="board-pinned">
-            <div class="svg-court" id="board-container">
+        <div class="player-card">
+            <h3 style="color: var(--p2-color)">TANGO</h3>
+            <div class="score" id="p2-score">0</div>
+            <div>Stam: <span class="stam-text" id="p2-stam">10</span><span class="stam-max">/<span id="p2-max">10</span></span></div>
+            <div id="p2-warn" class="fatigue-warn">Fatigued (-1)</div>
+        </div>
+    </div>
+
+    <div>
+        <div class="door-indicator">▲ THE DOOR ▲</div>
+        <div class="board-wrapper">
+            <div class="svg-container" id="board-container">
+                <div id="dice-on-board" class="dice-overlay">?</div>
                 <div id="t-p1" class="token p1">🐱</div>
                 <div id="t-p2" class="token p2">😼</div>
                 <div id="t-ball" class="token ball"></div>
@@ -96,106 +205,182 @@
         </div>
     </div>
 
-    <div class="sidebar">
-        <div class="command-header">Workstation</div>
-        <div class="dice-box">
-            <div class="dice-label">Dice Roll</div>
-            <div class="dice-val" id="dv">?</div>
+    <div class="door-ui">
+        <div class="door-grid">
+            <div class="door-cell" onclick="setTarget('TL', 5, 'TOP LEFT')">TOP L<span>TN 5</span></div>
+            <div class="door-cell" onclick="setTarget('TM', 4, 'TOP MID')">TOP M<span>TN 4</span></div>
+            <div class="door-cell" onclick="setTarget('TR', 5, 'TOP RIGHT')">TOP R<span>TN 5</span></div>
+            
+            <div class="door-cell" style="opacity:0.3; pointer-events:none;"></div> <div class="door-cell selected" onclick="setTarget('MM', 2, 'CENTER')">CENTER<span>TN 2</span></div>
+            <div class="door-cell" onclick="setTarget('MR', 4, 'MID RIGHT')">MID R<span>TN 4</span></div>
+            
+            <div class="door-cell" onclick="setTarget('BL', 5, 'BOT LEFT')">BOT L<span>TN 5</span></div>
+            <div class="door-cell" onclick="setTarget('BM', 4, 'BOT MID')">BOT M<span>TN 4</span></div>
+            <div class="door-cell" onclick="setTarget('BR', 5, 'BOT RIGHT')">BOT R<span>TN 5</span></div>
         </div>
-
-        <div class="dashboard">
-            <div class="cat-stats">
-                <b style="color:var(--p1-color)">MINTZY</b><br>
-                Score: <span id="s1">0</span> | Stam: <span id="st1">10</span>
-            </div>
-            <div class="cat-stats">
-                <b style="color:var(--p2-color)">TANGO</b><br>
-                Score: <span id="s2">0</span> | Stam: <span id="st2">10</span>
-            </div>
-        </div>
-
-        <div class="controls-pinned">
-            <button class="btn-shoot" onclick="playTurn()" id="sb">EXECUTE</button>
-            <button class="btn-sim" onclick="toggleSim()" id="sm">AUTO-SIM</button>
-        </div>
-
-        <div class="log-display" id="log">> Serve Ready...</div>
+        <div class="knob-physical" id="knob-btn" onclick="setTarget('KNOB', 6, 'THE KNOB')">KNOB<br><span style="font-size:0.5rem; font-weight:normal">TN 6</span></div>
     </div>
 
+    <div class="controls-wrapper" id="controls-ui">
+        <select id="sel-power" onchange="updateOdds()">
+            <option value="1">POWER 1: LOB (+1 Aim, Low Cost)</option>
+            <option value="2" selected>POWER 2: DRIVE (+0 Aim, Mid Cost)</option>
+            <option value="3">POWER 3: BULLET (-2 Aim, High Cost)</option>
+        </select>
+        
+        <div class="action-row">
+            <div class="target-readout">
+                <div style="font-size: 0.6rem; color: #aaa; text-transform: uppercase;">Target / Req</div>
+                <div class="val" id="ui-tn">2+</div>
+                <div style="font-size: 0.7rem; color: #fff; margin-top: 2px; font-weight: bold;" id="ui-tgt-name">CENTER</div>
+            </div>
+            <button class="btn-shoot" onclick="playTurn()" id="btn-shoot">Execute Swing</button>
+        </div>
+    </div>
+
+    <div class="log-box" id="match-log">> Match Initialized. Mintzy serves.</div>
+
+</div>
+
 <script>
-    const R = 18, W = Math.sqrt(3)*R, H = 2*R, COLS = 7, ROWS = 15;
+    // --- BOARD SETUP ---
+    const R = 20, W = Math.sqrt(3)*R, H = 2*R, COLS = 7, ROWS = 15; 
     let s = {
-        p1: { id: 'Mintzy', x: 3, y: 14, score: 0, stam: 10 },
-        p2: { id: 'Tango', x: 4, y: 14, score: 0, stam: 10 },
-        ball: { x: 3, y: 14, free: 3 },
-        active: 1, target: 'MM', targetTN: 2, isSim: false, isAnim: false
+        p1: { id: 'Mintzy', x: 3, y: 14, score: 0, stam: 10, max: 10 },
+        p2: { id: 'Tango', x: 3, y: 12, score: 0, stam: 10, max: 10 },
+        ball: { x: 3, y: 14, state: 'Mid', free: 3 },
+        active: 1, target: 'MM', targetName: 'CENTER', targetTN: 2, isAnimating: false, isSim: false
     };
 
-    function buildBoard() {
+    function toggleModal(id) {
+        let mod = document.getElementById(id);
+        mod.style.display = mod.style.display === 'flex' ? 'none' : 'flex';
+    }
+
+    function getHexCenter(c, r) { return { x: (c*W) + (r%2!==0 ? W/2 : 0) + W/2, y: (r*H*0.75) + H/2 }; }
+
+    function buildSVGBoard() {
         const container = document.getElementById('board-container');
         let totalW = (COLS*W)+(W/2), totalH = (ROWS*H*0.75)+(H*0.25);
         container.style.width = totalW + 'px'; container.style.height = totalH + 'px';
+
         let svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
         svg.setAttribute("width", totalW); svg.setAttribute("height", totalH);
+        svg.style.position = "absolute"; svg.style.top = "0"; svg.style.left = "0";
+
         for(let r=0; r<ROWS; r++) {
             for(let c=0; c<COLS; c++) {
-                let cx = (c*W) + (r%2!==0 ? W/2 : 0) + W/2, cy = (r*H*0.75) + H/2;
-                // Simplified Foyer Court Lines
-                let fill = c < 2 ? '#dcdcdc' : (c > 4 ? '#dcdcdc' : '#f0f0f0');
-                if(r < 3) fill = '#ffdede'; // Skirmish Zone
-
-                let pts = []; for(let i=0; i<6; i++) pts.push(`${cx + R * Math.cos(Math.PI/180 * (60*i-30))},${cy + R * Math.sin(Math.PI/180 * (60*i-30))}`);
+                let center = getHexCenter(c, r);
+                let fill = c < 2 ? '#b5d0f5' : (c > 4 ? '#faeab0' : '#f0f0f0');
+                if(r < 3) fill = '#ffdfdf'; // Skirmish Zone
+                let pts = [];
+                for(let i=0; i<6; i++) pts.push(`${center.x + R * Math.cos(Math.PI/180 * (60*i-30))},${center.y + R * Math.sin(Math.PI/180 * (60*i-30))}`);
+                
                 let poly = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-                poly.setAttribute("points", pts.join(" ")); poly.setAttribute("fill", fill); poly.setAttribute("stroke", "#bbb");
+                poly.setAttribute("points", pts.join(" "));
+                poly.setAttribute("fill", fill); poly.setAttribute("stroke", "#ccc");
                 svg.appendChild(poly);
             }
         }
+        
+        let rLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        rLine.setAttribute("x1", "0"); rLine.setAttribute("y1", getHexCenter(0, 8).y);
+        rLine.setAttribute("x2", totalW); rLine.setAttribute("y2", getHexCenter(0, 8).y);
+        rLine.setAttribute("stroke", "#333"); rLine.setAttribute("stroke-width", "2"); rLine.setAttribute("stroke-dasharray", "6,4");
+        svg.appendChild(rLine);
+
         container.insertBefore(svg, container.firstChild);
     }
 
-    function setT(code, tn) {
-        s.target = code; s.targetTN = tn;
+    function updateTokens() {
+        let p1 = getHexCenter(s.p1.x, s.p1.y), p2 = getHexCenter(s.p2.x, s.p2.y), b = getHexCenter(s.ball.x, s.ball.y);
+        // Note: tokens are 44x44, so we offset by -22px (handled in CSS margin)
+        document.getElementById('t-p1').style.transform = `translate(${p1.x}px, ${p1.y}px)`;
+        document.getElementById('t-p2').style.transform = `translate(${p2.x}px, ${p2.y}px)`;
+        document.getElementById('t-ball').style.transform = `translate(${b.x}px, ${b.y}px)`;
+    }
+
+    function setTarget(code, tn, name) {
+        if(s.isAnimating) return;
+        s.target = code; s.targetTN = tn; s.targetName = name;
         document.querySelectorAll('.door-cell, .knob-physical').forEach(el => el.classList.remove('selected'));
         event.currentTarget.classList.add('selected');
+        updateOdds();
     }
 
-    function updateView() {
-        let p1c = { x: (s.p1.x*W) + (s.p1.y%2!==0 ? W/2 : 0) + W/2, y: (s.p1.y*H*0.75) + H/2 };
-        let p2c = { x: (s.p2.x*W) + (s.p2.y%2!==0 ? W/2 : 0) + W/2, y: (s.p2.y*H*0.75) + H/2 };
-        let bc = { x: (s.ball.x*W) + (s.ball.y%2!==0 ? W/2 : 0) + W/2, y: (s.ball.y*H*0.75) + H/2 };
-        document.getElementById('t-p1').style.transform = `translate(${p1c.x}px, ${p1c.y}px)`;
-        document.getElementById('t-p2').style.transform = `translate(${p2c.x}px, ${p2c.y}px)`;
-        document.getElementById('t-ball').style.transform = `translate(${bc.x}px, ${bc.y}px)`;
-        document.getElementById('s1').innerText = s.p1.score; document.getElementById('s2').innerText = s.p2.score;
-        document.getElementById('st1').innerText = s.p1.stam; document.getElementById('st2').innerText = s.p2.stam;
+    function updateOdds() {
+        let p = s.active === 1 ? s.p1 : s.p2;
+        let power = parseInt(document.getElementById('sel-power').value);
+        let mod = 0;
+        
+        let dist = Math.max(Math.abs(p.x - s.ball.x), Math.abs(p.y - s.ball.y));
+        let cost = Math.max(0, dist - s.ball.free);
+
+        if(cost >= 2) mod -= 1; // Scramble penalty
+        if(p.stam <= 3) mod -= 1; // Fatigue penalty
+        
+        if (s.target === 'KNOB' && p.stam === 10 && p.x >= 2 && p.x <= 4) mod += 1; // Peak condition
+        mod += (power === 3 ? -2 : (power === 1 ? 1 : 0));
+        
+        let req = s.targetTN - mod;
+        document.getElementById('ui-tn').innerText = req > 6 ? (s.target==='KNOB' ? '6!' : 'IMP.') : req + '+';
+        document.getElementById('ui-tgt-name').innerText = s.targetName;
     }
+
+    function renderUI() {
+        document.getElementById('p1-score').innerText = s.p1.score; document.getElementById('p2-score').innerText = s.p2.score;
+        document.getElementById('p1-stam').innerText = s.p1.stam; document.getElementById('p1-max').innerText = s.p1.max;
+        document.getElementById('p2-stam').innerText = s.p2.stam; document.getElementById('p2-max').innerText = s.p2.max;
+        
+        document.getElementById('p1-stam').className = `stam-text ${s.p1.stam <= 3 ? 'low' : ''}`;
+        document.getElementById('p1-warn').style.display = s.p1.stam <= 3 ? 'block' : 'none';
+        
+        document.getElementById('p2-stam').className = `stam-text ${s.p2.stam <= 3 ? 'low' : ''}`;
+        document.getElementById('p2-warn').style.display = s.p2.stam <= 3 ? 'block' : 'none';
+
+        document.getElementById('btn-shoot').disabled = s.isAnimating;
+        updateOdds();
+    }
+
+    function log(msg) {
+        let box = document.getElementById('match-log');
+        box.innerHTML += `<div style="margin-top:4px;">${msg}</div>`;
+        box.scrollTop = box.scrollHeight;
+    }
+
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
 
     async function playTurn() {
-        if(s.isAnim) return; s.isAnim = true;
+        if(s.isAnimating) return;
+        s.isAnimating = true; renderUI();
+
         let p = s.active === 1 ? s.p1 : s.p2, opp = s.active === 1 ? s.p2 : s.p1;
-        let cost = Math.max(0, Math.max(Math.abs(p.x - s.ball.x), Math.abs(p.y - s.ball.y)) - s.ball.free);
-        p.stam = Math.max(0, p.stam - cost); p.x = s.ball.x; p.y = s.ball.y;
-        updateView(); await new Promise(r => setTimeout(r, 400));
-
-        let roll = Math.floor(Math.random()*6)+1, mod = (p.stam <= 3 ? -1 : 0), total = roll + mod;
-        document.getElementById('dv').innerText = roll;
-        const l = document.getElementById('log');
-
-        if (total <= 0) { l.innerHTML = `> Whiff! Pt for ${opp.id}`; hScore(opp); }
-        else if (s.target === 'KNOB' && roll === 6) { l.innerHTML = `> DING! KNOB HIT!`; hScore(p, 3); }
-        else if (total >= s.targetTN) {
-            let sx = (s.target.includes('L') ? 5 : (s.target.includes('R') ? 1 : 3));
-            let sy = (s.target.includes('B') ? 2 : (s.target.includes('T') ? 12 : 6));
-            if (Math.max(Math.abs(opp.x-sx), Math.abs(opp.y-sy)) > opp.stam+1) { l.innerHTML = `> Winner! Pt for ${p.id}`; hScore(p); }
-            else { s.ball.x = sx; s.ball.y = sy; s.ball.free = 1; s.active = s.active === 1 ? 2 : 1; l.innerHTML = `> ${p.id} returns.`; }
-        } else { l.innerHTML = `> Pop-up.`; s.ball.y = 10; s.active = s.active === 1 ? 2 : 1; }
+        let power = parseInt(document.getElementById('sel-power').value);
+        let dist = Math.max(Math.abs(p.x - s.ball.x), Math.abs(p.y - s.ball.y)), cost = Math.max(0, dist - s.ball.free);
         
-        updateView(); s.isAnim = false; if(s.isSim) setTimeout(playTurn, 1000);
-    }
+        p.stam = Math.max(0, p.stam - cost);
+        p.x = s.ball.x; p.y = s.ball.y; updateTokens(); await sleep(700); 
 
-    function hScore(w, pts=1) { w.score += pts; s.p1.stam = 10; s.p2.stam = 10; s.p1.x = 3; s.p1.y = 14; s.p2.x = 4; s.p2.y = 14; s.ball.x = 3; s.ball.y = 14; s.active = (w === s.p1 ? 1 : 2); document.getElementById('dv').innerText = '?'; }
-    function toggleSim() { s.isSim = !s.isSim; document.getElementById('sm').innerText = s.isSim ? 'STOP' : 'AUTO-SIM'; if(s.isSim) playTurn(); }
-    buildBoard(); updateView();
-</script>
-</body>
-</html>
+        // --- DICE ANIMATION (SLOWED DOWN) ---
+        const dice = document.getElementById('dice-on-board'); dice.style.display = 'flex';
+        let roll = 1;
+        for(let d of [100, 150, 200, 300, 400]) {
+            roll = Math.floor(Math.random()*6)+1;
+            dice.innerText = roll;
+            dice.style.transform = `translate(-50%, -50%) rotate(${(Math.random()*40)-20}deg) scale(1.1)`; 
+            await sleep(d);
+        }
+        dice.style.transform = `translate(-50%, -50%) rotate(0deg) scale(1.3)`;
+        dice.style.color = roll >= 5 ? '#06d6a0' : (roll <= 2 ? '#f72585' : '#000');
+        await sleep(1000); 
+        dice.style.display = 'none'; dice.style.color = '#000';
+
+        // Math
+        let isPeak = (p.stam === 10 && p.x >= 2 && p.x <= 4);
+        let mod = (cost >= 2 ? -1 : 0) + (p.stam <= 3 ? -1 : 0) + (isPeak && s.target === 'KNOB' ? 1 : 0) + (power === 3 ? -2 : (power === 1 ? 1 : 0));
+        let total = roll + mod;
+
+        // Lactic Acid Check
+        if (s.target === 'KNOB' && roll !== 6 && total < 6) {
+            p.max = Math.max(1, p.max - 1);
+            log(`<span style="color:#f72
