@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>21 Knob: Interactive Simulator V12</title>
+    <title>21 Knob: Skirmish Simulator V14</title>
     <style>
         :root {
+            --lane-L: #b5d0f5; --lane-C: #f0f0f0; --lane-R: #faeab0;
             --p1-color: #4361ee; --p2-color: #f72585;
             --wood: #8b5a2b; --bg-dark: #1e1e24;
         }
@@ -36,6 +37,8 @@
         .score { font-size: 1.8rem; font-weight: bold; line-height: 1; margin-bottom: 5px; }
         .stam-text { font-size: 1.2rem; font-weight: bold; color: #06d6a0; }
         .stam-text.low { color: #d62828; }
+        .stam-max { font-size: 0.9rem; color: #888; }
+        .lactic-warning { color: #d62828; font-weight: bold; font-size: 0.8rem; animation: pulse 1.5s infinite; }
 
         .btn-icon {
             background: #ff9f1c; color: #000; font-weight: bold; font-size: 1.2rem;
@@ -90,6 +93,8 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.8); line-height: 1.4;
         }
         .action-popup b { color: #ff9f1c; font-size: 1.2rem; display: block; margin-bottom: 5px;}
+        .acid-text { color: #f72585; font-weight: bold; background: rgba(247, 37, 133, 0.2); padding: 4px; border-radius: 4px; display: inline-block; margin-top: 5px; border: 1px solid #f72585;}
+        .heal-text { color: #06d6a0; font-weight: bold; background: rgba(6, 214, 160, 0.2); padding: 4px; border-radius: 4px; display: inline-block; margin-top: 5px; border: 1px solid #06d6a0;}
 
         /* --- CONTROLS SECTION --- */
         .controls-wrapper {
@@ -138,7 +143,7 @@
         }
         .door-knob span { font-size: 0.75rem; font-weight: bold; }
         .door-knob:hover { transform: translate(50%, -50%) scale(1.1); }
-        .knob-selected { border-color: #fff; box-shadow: 0 0 25px #ff9f1c, inset 0 0 10px #fff; transform: translate(50%, -50%) scale(1.15); }
+        .knob-selected { border-color: #fff; box-shadow: 0 0 25px #f72585, inset 0 0 10px #fff; transform: translate(50%, -50%) scale(1.15); }
 
         /* SELECTIONS & ODDS */
         .decision-panel {
@@ -172,6 +177,8 @@
         .slider-group label { display: block; margin-bottom: 5px; color: #ccc; }
         .slider-group input { width: 100%; accent-color: #ff9f1c; }
         .close-btn { background: #d62828; color: white; margin-top: 15px; padding: 12px;}
+        
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
@@ -179,32 +186,27 @@
 <div class="modal-overlay" id="settings-modal">
     <div class="modal-content">
         <h2>⚙️ Tweak Skirmish Mechanics</h2>
-        <p style="font-size: 0.9rem; color: #aaa;">Adjust the math to make the game feel tighter or looser.</p>
-        
         <div class="slider-group">
             <label>Average Bounce Depth (Rows 1-15)</label>
             <input type="range" id="cfg-depth" min="2" max="14" value="6" oninput="document.getElementById('val-depth').innerText=this.value">
             <div style="text-align: right; color: #ff9f1c; font-weight: bold;" id="val-depth">6 (Skirmish Bias)</div>
         </div>
-
         <div class="slider-group">
             <label>Lateral Scatter Spread (Chaos)</label>
             <input type="range" id="cfg-scatter" min="0" max="3" value="1" oninput="document.getElementById('val-scatter').innerText=this.value">
             <div style="text-align: right; color: #ff9f1c; font-weight: bold;" id="val-scatter">1 Hex</div>
         </div>
-
         <button class="close-btn" onclick="toggleModal('settings-modal')">Save & Close</button>
     </div>
 </div>
 
 <div class="modal-overlay" id="rules-modal">
     <div class="modal-content">
-        <h2>📖 Skirmish Rules</h2>
+        <h2>📖 Skirmish Rules Update</h2>
         <ul>
-            <li><b>Left Door:</b> Cross-court reflection to the Right lane.</li>
-            <li><b>Right Door:</b> Cross-court reflection to the Left lane.</li>
-            <li><b>Power 3:</b> Opponent gets 0 free moves. They burn stamina instantly.</li>
-            <li><b>Zero Stamina:</b> Forces a Dive (Power 1, -2 accuracy).</li>
+            <li><b>Lactic Acid Damage:</b> If you aim for the Glory Knob and miss, your <b>Max Stamina is permanently reduced by 1</b> for the rest of the game!</li>
+            <li><b>Second Wind (Adrenaline):</b> If you explicitly aim for the Glory Knob and HIT IT, you score 3 points AND heal 1 Lactic Acid (Max Stamina +1).</li>
+            <li><b>Pipeline Knob Nerf:</b> Accidental Knobs from the Center Lane no longer trigger if you use a safe Power 1 Lob. Accidental Knobs grant 3 points, but do <i>not</i> trigger a Second Wind heal.</li>
         </ul>
         <button class="close-btn" onclick="toggleModal('rules-modal')">Close</button>
     </div>
@@ -216,7 +218,8 @@
         <div class="player-card">
             <h3 style="color: var(--p1-color)">MINTZY</h3>
             <div class="score" id="p1-score">0</div>
-            <div>Stam: <span class="stam-text" id="p1-stam">10</span></div>
+            <div>Stam: <span class="stam-text" id="p1-stam">10</span><span class="stam-max">/<span id="p1-max">10</span></span></div>
+            <div id="p1-warn" class="lactic-warning" style="display:none">LACTIC ACID!</div>
         </div>
         
         <div class="btn-group">
@@ -227,7 +230,8 @@
         <div class="player-card">
             <h3 style="color: var(--p2-color)">TANGO</h3>
             <div class="score" id="p2-score">0</div>
-            <div>Stam: <span class="stam-text" id="p2-stam">10</span></div>
+            <div>Stam: <span class="stam-text" id="p2-stam">10</span><span class="stam-max">/<span id="p2-max">10</span></span></div>
+            <div id="p2-warn" class="lactic-warning" style="display:none">LACTIC ACID!</div>
         </div>
     </div>
 
@@ -274,7 +278,7 @@
             <button class="primary" onclick="playTurn()" id="btn-shoot">Run & Roll Dice</button>
         </div>
 
-        <div class="log" id="log-box">Board rendering fixed! Mintzy serves.</div>
+        <div class="log" id="log-box">Second Wind active. Mintzy serves!</div>
         <select id="sel-p2-mode" style="margin-top: -5px;">
             <option value="human">Pass & Play</option>
             <option value="ai-balanced" selected>Play vs. AI</option>
@@ -283,12 +287,12 @@
 </div>
 
 <script>
-    // --- NATIVE SVG RENDERING (FIXES CROSS BROWSER ISSUES) ---
+    // --- NATIVE SVG RENDERING ---
     const R = 20, W = Math.sqrt(3)*R, H = 2*R, COLS = 7, ROWS = 15; 
 
     let s = {
-        p1: { id: 'Mintzy', class: 'p1', x: 3, y: 14, score: 0, stam: 10 },
-        p2: { id: 'Tango', class: 'p2', x: 3, y: 12, score: 0, stam: 10 },
+        p1: { id: 'Mintzy', class: 'p1', x: 3, y: 14, score: 0, stam: 10, maxStam: 10 },
+        p2: { id: 'Tango', class: 'p2', x: 3, y: 12, score: 0, stam: 10, maxStam: 10 },
         ball: { x: 3, y: 14, state: 'Mid', freeMv: 3 },
         active: 1, isAnimating: false, target: 'Center'
     };
@@ -306,40 +310,31 @@
         return pts.join(" ");
     }
 
-    // Completely re-written using createElementNS for perfect browser compatibility
     function buildSVGBoard() {
         const container = document.getElementById('board-container');
         let totalW = (COLS*W)+(W/2), totalH = (ROWS*H*0.75)+(H*0.25);
         container.style.width = totalW + 'px'; container.style.height = totalH + 'px';
 
         let svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        svg.setAttribute("width", totalW);
-        svg.setAttribute("height", totalH);
-        svg.style.position = "absolute";
-        svg.style.top = "0"; svg.style.left = "0"; svg.style.zIndex = "1";
+        svg.setAttribute("width", totalW); svg.setAttribute("height", totalH);
+        svg.style.position = "absolute"; svg.style.top = "0"; svg.style.left = "0"; svg.style.zIndex = "1";
 
         for(let r=0; r<ROWS; r++) {
             for(let c=0; c<COLS; c++) {
                 let center = getHexCenter(c, r);
-                // Hardcoding colors avoids CSS Var rendering bugs in iOS/Safari SVG engines
                 let fill = c < 2 ? '#b5d0f5' : (c > 4 ? '#faeab0' : '#f0f0f0');
-                
                 let poly = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
                 poly.setAttribute("points", getHexPoints(center.x, center.y));
-                poly.setAttribute("fill", fill);
-                poly.setAttribute("stroke", "#888");
-                poly.setAttribute("stroke-width", "1.5");
+                poly.setAttribute("fill", fill); poly.setAttribute("stroke", "#888"); poly.setAttribute("stroke-width", "1.5");
                 svg.appendChild(poly);
             }
         }
 
-        // Add visual court lines
         let returnLineY = getHexCenter(0, 7).y;
         let rLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
         rLine.setAttribute("x1", "0"); rLine.setAttribute("y1", returnLineY);
         rLine.setAttribute("x2", totalW); rLine.setAttribute("y2", returnLineY);
-        rLine.setAttribute("stroke", "#333"); rLine.setAttribute("stroke-width", "3");
-        rLine.setAttribute("stroke-dasharray", "8,4");
+        rLine.setAttribute("stroke", "#333"); rLine.setAttribute("stroke-width", "3"); rLine.setAttribute("stroke-dasharray", "8,4");
         svg.appendChild(rLine);
 
         let serveLineY = getHexCenter(0, 13).y - H/2;
@@ -349,7 +344,6 @@
         sLine.setAttribute("stroke", "#fca311"); sLine.setAttribute("stroke-width", "5");
         svg.appendChild(sLine);
 
-        // Prepend it to the container so tokens render on top
         container.insertBefore(svg, container.firstChild);
     }
 
@@ -374,164 +368,4 @@
         s.target = targetZone;
         document.querySelectorAll('.door-panel').forEach(el => el.classList.remove('selected'));
         document.getElementById('door-ui').classList.remove('frame-selected');
-        document.getElementById('dp-Knob').classList.remove('knob-selected');
-
-        if(targetZone === 'Frame') document.getElementById('door-ui').classList.add('frame-selected');
-        else if (targetZone === 'Knob') document.getElementById('dp-Knob').classList.add('knob-selected');
-        else document.getElementById('dp-'+targetZone).classList.add('selected');
-
-        updateOdds();
-    }
-
-    function updateOdds() {
-        let p = s.active === 1 ? s.p1 : s.p2;
-        let dist = Math.max(Math.abs(p.x - s.ball.x), Math.abs(p.y - s.ball.y));
-        let cost = Math.max(0, dist - s.ball.freeMv);
-        document.getElementById('ui-cost').innerText = cost;
-        document.getElementById('ui-cost').style.color = cost > p.stam ? '#d62828' : 'white';
-
-        let tnBase = { 'Left':3, 'Center':2, 'Right':3, 'Bottom':4, 'Frame':5, 'Knob':6 }[s.target];
-        let power = parseInt(document.getElementById('sel-power').value);
-        let mod = 0;
-        if(cost >= 3) mod -= 1; 
-        if(s.ball.x < 2 || s.ball.x > 4) mod -= 1; 
-        if(s.ball.state === 'Low' && s.target !== 'Bottom') mod -= 2; 
-        if(s.ball.state === 'High' && power === 3) mod += 0; 
-        else if(power === 3) mod -= 2; else if(power === 1) mod += 1;
-        
-        let finalReq = tnBase - mod;
-        document.getElementById('ui-tn').innerText = finalReq > 6 ? (s.target==='Knob' ? '6!' : 'Imp.') : finalReq + '+';
-        document.getElementById('ui-tn').style.color = finalReq > 6 ? '#d62828' : '#ff9f1c';
-        document.getElementById('ui-turn-name').innerText = p.id;
-        document.getElementById('ui-turn-name').style.color = `var(--${p.class}-color)`;
-    }
-
-    function renderUI() {
-        document.getElementById('p1-score').innerText = s.p1.score; document.getElementById('p2-score').innerText = s.p2.score;
-        document.getElementById('p1-stam').innerText = s.p1.stam; document.getElementById('p1-stam').className = `stam-text ${s.p1.stam <= 2 ? 'low' : ''}`;
-        document.getElementById('p2-stam').innerText = s.p2.stam; document.getElementById('p2-stam').className = `stam-text ${s.p2.stam <= 2 ? 'low' : ''}`;
-        document.getElementById('controls-ui').style.opacity = s.isAnimating ? '0.5' : '1';
-        if(s.isAnimating) document.getElementById('door-ui').classList.add('disabled'); else document.getElementById('door-ui').classList.remove('disabled');
-        updateOdds();
-    }
-
-    function log(msg) {
-        let box = document.getElementById('log-box'); box.innerHTML += `<div style="margin-bottom:4px; color:#aaa;">${msg}</div>`; box.scrollTop = box.scrollHeight;
-    }
-
-    const sleep = ms => new Promise(r => setTimeout(r, ms));
-    function setButtons(disabled) { document.getElementById('btn-shoot').disabled = disabled; }
-    async function showPopup(html) { let pop = document.getElementById('action-popup'); pop.innerHTML = html; pop.style.display = 'block'; }
-    function hidePopup() { document.getElementById('action-popup').style.display = 'none'; }
-
-    function dynamicScatter(targetZone, power) {
-        let baseDepth = parseInt(document.getElementById('cfg-depth').value);
-        let baseScatter = parseInt(document.getElementById('cfg-scatter').value);
-        if (targetZone === 'Bottom') s.ball.y = Math.floor(Math.random() * 3) + 1; 
-        else if (targetZone === 'Knob') s.ball.y = baseDepth; 
-        else {
-            let offset = (s.ball.state === 'High') ? 4 : (power === 3 ? -2 : 0);
-            s.ball.y = Math.max(1, Math.min(14, baseDepth + offset + (Math.floor(Math.random()*4)-2))); 
-        }
-        let tgtX = 3; 
-        if (targetZone === 'Left') tgtX = 5; if (targetZone === 'Right') tgtX = 1; 
-        if (targetZone === 'Frame') { tgtX = Math.random() > 0.5 ? 0 : 6; baseScatter = 2; } 
-        let spread = Math.floor(Math.random() * (baseScatter * 2 + 1)) - baseScatter;
-        s.ball.x = Math.max(0, Math.min(6, tgtX + spread));
-    }
-
-    async function playTurn() {
-        if(s.isAnimating) return;
-        s.isAnimating = true; setButtons(true); renderUI();
-
-        let p = s.active === 1 ? s.p1 : s.p2, opp = s.active === 1 ? s.p2 : s.p1;
-        let power = parseInt(document.getElementById('sel-power').value);
-        let dist = Math.max(Math.abs(p.x - s.ball.x), Math.abs(p.y - s.ball.y)), cost = Math.max(0, dist - s.ball.freeMv);
-        
-        if (cost > p.stam) { log(`<b style="color:#d62828">DIVE!</b> ${p.id} dives! Stamina = 0.`); p.stam = 0; power = 1; setTarget('Center', null); } 
-        else { p.stam -= cost; }
-
-        p.x = s.ball.x; p.y = s.ball.y; updateTokens(); await sleep(800); 
-
-        let tnBase = { 'Left':3, 'Center':2, 'Right':3, 'Bottom':4, 'Frame':5, 'Knob':6 }[s.target];
-        let mod = 0;
-        if(cost >= 3) mod -= 1; if(s.ball.x < 2 || s.ball.x > 4) mod -= 1; 
-        if(s.ball.state === 'Low' && s.target !== 'Bottom') mod -= 2; 
-        if(s.ball.state === 'High' && power === 3) mod += 0; 
-        else if(power === 3) mod -= 2; else if(power === 1) mod += 1;
-
-        const dice = document.getElementById('dice-on-board'); dice.style.display = 'flex';
-        let roll = Math.floor(Math.random()*6)+1;
-        for(let d of [50,50,100,150,250]) {
-            dice.innerText = Math.floor(Math.random()*6)+1;
-            dice.style.transform = `translate(-50%, -50%) rotate(${(Math.random()*40)-20}deg) scale(1.1)`; await sleep(d);
-        }
-        dice.style.transform = `translate(-50%, -50%) rotate(0deg) scale(1.2)`; dice.innerText = roll;
-        dice.style.color = (roll >= 5) ? '#2a9d8f' : (roll <= 2 ? '#d62828' : '#000');
-        await sleep(900); dice.style.display = 'none'; dice.style.color = 'black'; 
-
-        let total = roll + mod;
-        log(`<span style="color:var(--${p.class}-color)">${p.id}</span> rolled ${roll}. Total: <b>${total}</b>.`);
-        
-        document.getElementById('t-ball').style.transition = "transform 0.4s ease-in";
-        let bDoor = getPixelCoords(0, 0, 'door'); document.getElementById('t-ball').style.transform = `translate(${bDoor.x}px, ${bDoor.y}px)`;
-        await sleep(400); 
-
-        let popupHtml = "";
-        if (total <= 0) {
-            popupHtml = `<b>WHIFF!</b>Hit the drywall.<br>${opp.id} scores!`; handleScore(opp);
-        } else if (total < tnBase && !(s.target === 'Knob' && roll === 6)) { 
-            popupHtml = `<b>POPPED UP!</b>Missed the sweet spot.<br>Ball floats High for an easy return.`;
-            s.ball.state = 'High'; s.ball.freeMv = 3; dynamicScatter('Center', 1); s.active = s.active === 1 ? 2 : 1;
-        } else {
-            if(s.target === 'Knob' || (s.target === 'Center' && p.x >=2 && p.x <=4 && roll === 6)) {
-                popupHtml = `<b>DING! THE KNOB!</b>A perfect strike. 3 Points!`; handleScore(p, 3);
-            } else {
-                if(s.target === 'Left') popupHtml = `<b>LEFT PANEL</b><br>Cross-court reflection to the RIGHT lane!`;
-                if(s.target === 'Right') popupHtml = `<b>RIGHT PANEL</b><br>Cross-court reflection to the LEFT lane!`;
-                if(s.target === 'Center') popupHtml = `<b>CENTER PANEL</b><br>Solid drive straight down the middle.`;
-                if(s.target === 'Bottom') popupHtml = `<b>BOTTOM DROP</b><br>Nasty drop shot short of the skirmish line.`;
-                if(s.target === 'Frame') popupHtml = `<b>FRAME HIT!</b><br>Maximum Chaos! Extreme lateral bounce.`;
-                
-                s.ball.state = (s.target === 'Bottom') ? 'Low' : 'Mid';
-                s.ball.freeMv = power === 1 ? 3 : (power === 2 ? 1 : 0);
-                dynamicScatter(s.target, power);
-                s.active = s.active === 1 ? 2 : 1; 
-            }
-        }
-        showPopup(popupHtml); await sleep(2200); hidePopup();
-
-        document.getElementById('t-ball').style.transition = "transform 1.4s cubic-bezier(0.25, 1, 0.5, 1)";
-        updateTokens(); await sleep(1400); 
-        
-        document.getElementById('t-ball').style.transition = "transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)";
-        s.isAnimating = false; renderUI(); setButtons(false); if (s.active === 2) triggerAI();
-    }
-
-    function handleScore(winner, pts = 1) {
-        if(winner.score === 21 && pts !== 3) log(`Must hit Knob to win!`); else winner.score = Math.min(21, winner.score + pts); 
-        s.ball.x = 3; s.ball.y = 14; s.ball.state = 'Mid'; s.ball.freeMv = 3; s.p1.x = 3; s.p1.y = 14; s.p2.x = 4; s.p2.y = 14;
-        s.active = winner === s.p1 ? 1 : 2; 
-    }
-
-    async function triggerAI() {
-        let mode = document.getElementById('sel-p2-mode').value;
-        if (mode === 'human' || s.active === 1) return;
-        setButtons(true); await sleep(1000); 
-        let cost = Math.max(0, Math.max(Math.abs(s.p2.x - s.ball.x), Math.abs(s.p2.y - s.ball.y)) - s.ball.freeMv);
-        let targets = ['Left', 'Center', 'Right', 'Bottom', 'Frame'];
-        let target = targets[Math.floor(Math.random() * 3)]; 
-        let power = 2;
-
-        if (s.p2.score >= 18) { target = 'Knob'; power = 1; }
-        else if (cost > s.p2.stam) { target = 'Center'; power = 1; }
-        else if (s.ball.state === 'High') { power = 3; target = Math.random() > 0.5 ? 'Left' : 'Right'; }
-
-        document.getElementById('sel-power').value = power; setTarget(target, null);
-        await sleep(800); playTurn();
-    }
-
-    buildSVGBoard(); updateTokens(); renderUI();
-</script>
-</body>
-</html>
+        document.getElementById('dp-Knob').classList.remov
