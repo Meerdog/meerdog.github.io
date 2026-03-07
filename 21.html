@@ -3,89 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>21 Knob: Skirmish V18</title>
+    <title>21 Knob: Side-Panel V19</title>
     <style>
         :root {
             --p1-color: #4361ee; --p2-color: #f72585;
             --wood: #8b5a2b; --bg-dark: #1e1e24;
-            --hex-w: 30px; --hex-h: 22px;
+            --sidebar-w: 180px;
         }
 
         * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg-dark); color: #fff; margin: 0; padding: 5px; height: 100vh; overflow: hidden; display: flex; flex-direction: column; align-items: center; }
-        .app-container { display: flex; flex-direction: column; height: 100%; width: 100%; max-width: 500px; justify-content: space-between; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg-dark); color: #fff; margin: 0; padding: 0; height: 100vh; display: flex; overflow: hidden; }
 
-        /* --- DOOR (TOP) --- */
-        .door-container { padding: 5px; background: #2b2b36; border-radius: 8px; border: 2px solid #444; }
-        .door-grid {
-            display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px;
-            width: 180px; height: 130px; margin: 0 auto; background: #3b2212; padding: 5px; border-radius: 4px; position: relative;
-        }
-        .door-cell { background: #a66a38; border: 1px solid #522f18; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: bold; color: #fff; cursor: pointer; }
-        .door-cell.selected { border: 2px solid #ff9f1c; background: #c27c41; box-shadow: 0 0 8px #ff9f1c; z-index: 5; }
+        /* --- LEFT SIDE: GAMEPLAY --- */
+        .game-viewport { flex-grow: 1; display: flex; flex-direction: column; height: 100%; border-right: 2px solid #444; padding: 10px; align-items: center; }
         
-        /* Knob on LEFT MIDDLE */
-        .knob-overlay {
-            position: absolute; left: 15%; top: 50%; transform: translateY(-50%);
-            width: 38px; height: 38px; background: radial-gradient(circle, #ffe066, #d4af37, #8c7322);
-            border-radius: 50%; border: 2px solid #333; z-index: 10; display: flex; align-items: center; justify-content: center;
-            font-size: 0.55rem; color: #000; font-weight: 900; cursor: pointer;
+        .door-ui {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;
+            width: 200px; height: 140px; background: #3b2212; padding: 6px; border-radius: 6px; position: relative; margin-bottom: 15px; border: 4px solid #1a110a;
         }
-        .knob-overlay.selected { border-color: #fff; box-shadow: 0 0 12px #f72585; }
+        .door-cell { background: #a66a38; border: 1px solid #522f18; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold; cursor: pointer; color: #fff; }
+        .door-cell.selected { border: 2px solid #ff9f1c; background: #c27c41; box-shadow: 0 0 10px #ff9f1c; }
+        .knob { position: absolute; left: 10%; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; background: radial-gradient(circle, #ffe066, #d4af37, #8c7322); border-radius: 50%; border: 2px solid #333; z-index: 10; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; color: #000; font-weight: 900; cursor: pointer; }
+        .knob.selected { border-color: #fff; box-shadow: 0 0 15px #f72585; }
 
-        /* --- BOARD (CENTER) --- */
-        .board-wrapper { flex-grow: 1; background: #fff; border-radius: 8px; border: 4px solid var(--wood); overflow: hidden; display: flex; justify-content: center; align-items: flex-start; padding-top: 5px; }
+        .board-wrapper { background: #fff; padding: 5px; border-radius: 8px; border: 5px solid var(--wood); overflow: auto; max-height: 60vh; position: relative; }
         .svg-container { position: relative; }
-        .token { position: absolute; border-radius: 50%; z-index: 20; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: transform 0.5s ease-out; }
-        .p1 { width: 40px; height: 40px; background: var(--p1-color); border: 3px solid white; margin: -20px 0 0 -20px; }
-        .p2 { width: 40px; height: 40px; background: var(--p2-color); border: 3px solid white; margin: -20px 0 0 -20px; }
-        .ball { width: 12px; height: 12px; background: radial-gradient(circle at 30% 30%, #ffd166, #ff9f1c); z-index: 25; margin: -6px 0 0 -6px; transition: transform 0.7s cubic-bezier(0.1, 0.7, 0.1, 1); }
+        .token { position: absolute; border-radius: 50%; z-index: 20; display: flex; align-items: center; justify-content: center; font-size: 24px; transition: transform 0.5s ease-out; }
+        .p1 { width: 44px; height: 44px; background: var(--p1-color); border: 3px solid white; margin: -22px 0 0 -22px; }
+        .p2 { width: 44px; height: 44px; background: var(--p2-color); border: 3px solid white; margin: -22px 0 0 -22px; }
+        .ball { width: 14px; height: 14px; background: radial-gradient(circle at 30% 30%, #ffd166, #ff9f1c); z-index: 25; margin: -7px 0 0 -7px; transition: transform 0.7s cubic-bezier(0.1, 0.7, 0.1, 1); }
 
-        /* --- CONTROLS (BOTTOM) --- */
-        .dashboard { background: #2b2b36; padding: 10px; border-top: 2px solid #444; width: 100%; }
-        .stats { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 5px; }
-        .log-box { background: #111; height: 60px; overflow-y: auto; padding: 5px; font-size: 0.75rem; border-radius: 4px; color: #bbb; font-family: monospace; margin-bottom: 8px; }
-        .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
-        button { padding: 10px; font-weight: bold; border-radius: 4px; border: none; cursor: pointer; font-size: 0.8rem; }
-        .btn-main { background: #ff9f1c; color: #000; }
-        .btn-alt { background: #444; color: #fff; }
+        /* --- RIGHT SIDE: SIDEBAR --- */
+        .sidebar { width: var(--sidebar-w); height: 100%; padding: 15px; display: flex; flex-direction: column; gap: 15px; background: #1a1a21; }
+        .dice-display { background: #fff; color: #000; height: 80px; width: 80px; border-radius: 12px; align-self: center; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 4px solid #ff9f1c; }
+        .dice-val { font-size: 2.5rem; font-weight: 900; line-height: 1; }
+        .dice-label { font-size: 0.6rem; text-transform: uppercase; font-weight: bold; }
+        
+        .stat-block { background: #2b2b36; padding: 10px; border-radius: 6px; font-size: 0.85rem; }
+        .log-box { flex-grow: 1; background: #000; padding: 8px; font-family: monospace; font-size: 0.75rem; border-radius: 4px; overflow-y: auto; color: #06d6a0; border: 1px solid #333; }
+        
+        .controls { display: flex; flex-direction: column; gap: 8px; }
+        button { padding: 12px; font-weight: bold; border-radius: 6px; border: none; cursor: pointer; text-transform: uppercase; }
+        .btn-shoot { background: #ff9f1c; color: #000; font-size: 1rem; }
+        .btn-sim { background: #444; color: #fff; font-size: 0.7rem; }
     </style>
 </head>
 <body>
 
-<div class="app-container">
-    <div class="door-container">
-        <div class="door-grid" id="door-ui">
+    <div class="game-viewport">
+        <div class="door-ui">
             <div class="door-cell" onclick="setT('TL',5)">TL</div><div class="door-cell" onclick="setT('TM',4)">TM</div><div class="door-cell" onclick="setT('TR',5)">TR</div>
             <div class="door-cell" onclick="setT('ML',4)">ML</div><div class="door-cell selected" onclick="setT('MM',2)">CTR</div><div class="door-cell" onclick="setT('MR',4)">MR</div>
             <div class="door-cell" onclick="setT('BL',5)">BL</div><div class="door-cell" onclick="setT('BM',4)">BM</div><div class="door-cell" onclick="setT('BR',5)">BR</div>
-            <div class="knob-overlay" id="kb" onclick="setT('KNOB',6)">KNOB</div>
+            <div class="knob" id="kb" onclick="setT('KNOB',6)">KNOB</div>
+        </div>
+
+        <div class="board-wrapper">
+            <div class="svg-container" id="board-container">
+                <div id="t-p1" class="token p1">🐱</div>
+                <div id="t-p2" class="token p2">😼</div>
+                <div id="t-ball" class="token ball"></div>
+            </div>
         </div>
     </div>
 
-    <div class="board-wrapper">
-        <div class="svg-container" id="board-container">
-            <div id="t-p1" class="token p1">🐱</div>
-            <div id="t-p2" class="token p2">😼</div>
-            <div id="t-ball" class="token ball"></div>
+    <div class="sidebar">
+        <div class="dice-display">
+            <div class="dice-label">Dice Roll</div>
+            <div class="dice-val" id="dv">?</div>
         </div>
-    </div>
 
-    <div class="dashboard">
-        <div class="stats">
-            <div style="color:var(--p1-color)">P1: <span id="s1">0</span> (St:<span id="st1">10</span>)</div>
-            <div style="color:var(--p2-color)">P2: <span id="s2">0</span> (St:<span id="st2">10</span>)</div>
+        <div class="stat-block">
+            <b style="color:var(--p1-color)">MINTZY</b><br>
+            Score: <span id="s1">0</span> | Stam: <span id="st1">10</span>
         </div>
-        <div class="log-box" id="log">Ready...</div>
-        <div class="btn-row">
-            <button class="btn-main" onclick="playTurn()">SWING</button>
-            <button class="btn-alt" id="sim-btn" onclick="toggleSim()">AUTO-SIM</button>
+        <div class="stat-block">
+            <b style="color:var(--p2-color)">TANGO</b><br>
+            Score: <span id="s2">0</span> | Stam: <span id="st2">10</span>
+        </div>
+
+        <div class="log-box" id="log">Ready to serve.</div>
+
+        <div class="controls">
+            <button class="btn-shoot" onclick="playTurn()" id="sb">SWING</button>
+            <button class="btn-sim" onclick="toggleSim()" id="sm">AUTO-SIM</button>
         </div>
     </div>
-</div>
 
 <script>
-    const R = 15, W = Math.sqrt(3)*R, H = 2*R, COLS = 7, ROWS = 15;
+    const R = 18, W = Math.sqrt(3)*R, H = 2*R, COLS = 7, ROWS = 15;
     let s = {
         p1: { id: 'Mintzy', x: 3, y: 14, score: 0, stam: 10 },
         p2: { id: 'Tango', x: 4, y: 14, score: 0, stam: 10 },
@@ -105,7 +111,7 @@
                 let fill = c < 2 ? '#b5d0f5' : (c > 4 ? '#faeab0' : '#f0f0f0');
                 let pts = []; for(let i=0; i<6; i++) pts.push(`${cx + R * Math.cos(Math.PI/180 * (60*i-30))},${cy + R * Math.sin(Math.PI/180 * (60*i-30))}`);
                 let poly = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-                poly.setAttribute("points", pts.join(" ")); poly.setAttribute("fill", fill); poly.setAttribute("stroke", "#ddd");
+                poly.setAttribute("points", pts.join(" ")); poly.setAttribute("fill", fill); poly.setAttribute("stroke", "#eee");
                 svg.appendChild(poly);
             }
         }
@@ -114,7 +120,7 @@
 
     function setT(code, tn) {
         s.target = code; s.targetTN = tn;
-        document.querySelectorAll('.door-cell, .knob-overlay').forEach(el => el.classList.remove('selected'));
+        document.querySelectorAll('.door-cell, .knob').forEach(el => el.classList.remove('selected'));
         event.currentTarget.classList.add('selected');
     }
 
@@ -134,25 +140,26 @@
         let p = s.active === 1 ? s.p1 : s.p2, opp = s.active === 1 ? s.p2 : s.p1;
         let cost = Math.max(0, Math.max(Math.abs(p.x - s.ball.x), Math.abs(p.y - s.ball.y)) - s.ball.free);
         p.stam = Math.max(0, p.stam - cost); p.x = s.ball.x; p.y = s.ball.y;
-        update(); await new Promise(r => setTimeout(r, 500));
+        update(); await new Promise(r => setTimeout(r, 400));
 
         let roll = Math.floor(Math.random()*6)+1, mod = (p.stam <= 3 ? -1 : 0), total = roll + mod;
+        document.getElementById('dv').innerText = roll;
         const l = document.getElementById('log');
 
-        if (total <= 0) { l.innerHTML = `Whiff! Pt to ${opp.id}`; hScore(opp); }
-        else if (s.target === 'KNOB' && roll === 6) { l.innerHTML = `KNOB HIT! 3 pts!`; hScore(p, 3); }
+        if (total <= 0) { l.innerHTML = `> Whiff! Pt for ${opp.id}`; hScore(opp); }
+        else if (s.target === 'KNOB' && roll === 6) { l.innerHTML = `> DING! KNOB HIT!`; hScore(p, 3); }
         else if (total >= s.targetTN) {
             let sx = (s.target.includes('L') ? 5 : (s.target.includes('R') ? 1 : 3));
             let sy = (s.target.includes('B') ? 2 : (s.target.includes('T') ? 12 : 6));
-            if (Math.max(Math.abs(opp.x-sx), Math.abs(opp.y-sy)) > opp.stam+1) { l.innerHTML = `Winner! Pt to ${p.id}`; hScore(p); }
-            else { s.ball.x = sx; s.ball.y = sy; s.ball.free = 1; s.active = s.active === 1 ? 2 : 1; l.innerHTML = `${p.id} returns.`; }
-        } else { l.innerHTML = `Pop-up.`; s.ball.y = 10; s.active = s.active === 1 ? 2 : 1; }
+            if (Math.max(Math.abs(opp.x-sx), Math.abs(opp.y-sy)) > opp.stam+1) { l.innerHTML = `> WINNER! ${p.id} scores.`; hScore(p); }
+            else { s.ball.x = sx; s.ball.y = sy; s.ball.free = 1; s.active = s.active === 1 ? 2 : 1; l.innerHTML = `> ${p.id} returns.`; }
+        } else { l.innerHTML = `> Popped up!`; s.ball.y = 10; s.active = s.active === 1 ? 2 : 1; }
         
-        update(); s.isAnim = false; if(s.isSim) setTimeout(playTurn, 800);
+        update(); s.isAnim = false; if(s.isSim) setTimeout(playTurn, 1000);
     }
 
-    function hScore(w, pts=1) { w.score += pts; s.p1.stam = 10; s.p2.stam = 10; s.p1.x = 3; s.p1.y = 14; s.p2.x = 4; s.p2.y = 14; s.ball.x = 3; s.ball.y = 14; s.active = (w === s.p1 ? 1 : 2); }
-    function toggleSim() { s.isSim = !s.isSim; document.getElementById('sim-btn').innerText = s.isSim ? 'STOP' : 'AUTO-SIM'; if(s.isSim) playTurn(); }
+    function hScore(w, pts=1) { w.score += pts; s.p1.stam = 10; s.p2.stam = 10; s.p1.x = 3; s.p1.y = 14; s.p2.x = 4; s.p2.y = 14; s.ball.x = 3; s.ball.y = 14; s.active = (w === s.p1 ? 1 : 2); document.getElementById('dv').innerText = '?'; }
+    function toggleSim() { s.isSim = !s.isSim; document.getElementById('sm').innerText = s.isSim ? 'STOP' : 'AUTO-SIM'; if(s.isSim) playTurn(); }
     build(); update();
 </script>
 </body>
