@@ -3,54 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>21 Knob: Golden Ratio Edition V17</title>
+    <title>21 Knob: Skirmish V18</title>
     <style>
         :root {
             --p1-color: #4361ee; --p2-color: #f72585;
             --wood: #8b5a2b; --bg-dark: #1e1e24;
+            --hex-w: 30px; --hex-h: 22px;
         }
 
         * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg-dark); color: #fff; margin: 0; padding: 10px; display: flex; justify-content: center; }
-        .app-container { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 550px; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg-dark); color: #fff; margin: 0; padding: 5px; height: 100vh; overflow: hidden; display: flex; flex-direction: column; align-items: center; }
+        .app-container { display: flex; flex-direction: column; height: 100%; width: 100%; max-width: 500px; justify-content: space-between; }
 
-        /* --- DOOR INTERFACE --- */
-        .door-container { width: 100%; background: #2b2b36; padding: 10px; border-radius: 8px; border: 2px solid #444; }
+        /* --- DOOR (TOP) --- */
+        .door-container { padding: 5px; background: #2b2b36; border-radius: 8px; border: 2px solid #444; }
         .door-grid {
-            display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;
-            width: 240px; height: 180px; margin: 0 auto; background: #3b2212; padding: 6px; border-radius: 4px; position: relative;
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px;
+            width: 180px; height: 130px; margin: 0 auto; background: #3b2212; padding: 5px; border-radius: 4px; position: relative;
         }
-        .door-cell {
-            background: #a66a38; border: 2px solid #522f18; display: flex; flex-direction: column; align-items: center; justify-content: center;
-            font-size: 0.7rem; font-weight: bold; color: #fff; cursor: pointer;
-        }
-        .door-cell.selected { border-color: #ff9f1c; box-shadow: 0 0 10px #ff9f1c; background: #c27c41; z-index: 5; }
-        .knob-overlay {
-            position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-            width: 50px; height: 50px; background: radial-gradient(circle, #ffe066, #d4af37, #8c7322);
-            border-radius: 50%; border: 3px solid #333; z-index: 10; display: flex; align-items: center; justify-content: center;
-            font-size: 0.65rem; color: #000; font-weight: 900; cursor: pointer;
-        }
-        .knob-overlay.selected { border-color: #fff; box-shadow: 0 0 15px #f72585; }
-
-        /* --- BOARD --- */
-        .board-wrapper { background: #fff; padding: 10px; border-radius: 12px; border: 6px solid var(--wood); position: relative; display: flex; justify-content: center;}
-        .svg-container { position: relative; }
-        .token { position: absolute; border-radius: 50%; z-index: 20; display: flex; align-items: center; justify-content: center; font-size: 22px; transition: transform 0.6s ease-out; }
-        .p1 { width: 44px; height: 44px; background: var(--p1-color); border: 3px solid white; margin: -22px 0 0 -22px; }
-        .p2 { width: 44px; height: 44px; background: var(--p2-color); border: 3px solid white; margin: -22px 0 0 -22px; }
-        .ball { width: 14px; height: 14px; background: radial-gradient(circle at 30% 30%, #ffd166, #ff9f1c); z-index: 25; margin: -7px 0 0 -7px; transition: transform 0.8s cubic-bezier(0.17, 0.67, 0.83, 0.67); }
-
-        /* --- UI DASHBOARD --- */
-        .dashboard { background: #2b2b36; padding: 12px; border-radius: 8px; border: 2px solid #444; display: flex; flex-direction: column; gap: 8px; }
-        .stats-row { display: flex; justify-content: space-between; font-weight: bold; }
-        .log-box { background: #111; height: 120px; overflow-y: auto; padding: 8px; font-size: 0.85rem; border-radius: 4px; color: #bbb; font-family: monospace; border: 1px solid #444; }
+        .door-cell { background: #a66a38; border: 1px solid #522f18; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: bold; color: #fff; cursor: pointer; }
+        .door-cell.selected { border: 2px solid #ff9f1c; background: #c27c41; box-shadow: 0 0 8px #ff9f1c; z-index: 5; }
         
-        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        button { padding: 12px; font-weight: bold; border-radius: 4px; border: none; cursor: pointer; text-transform: uppercase; }
+        /* Knob on LEFT MIDDLE */
+        .knob-overlay {
+            position: absolute; left: 15%; top: 50%; transform: translateY(-50%);
+            width: 38px; height: 38px; background: radial-gradient(circle, #ffe066, #d4af37, #8c7322);
+            border-radius: 50%; border: 2px solid #333; z-index: 10; display: flex; align-items: center; justify-content: center;
+            font-size: 0.55rem; color: #000; font-weight: 900; cursor: pointer;
+        }
+        .knob-overlay.selected { border-color: #fff; box-shadow: 0 0 12px #f72585; }
+
+        /* --- BOARD (CENTER) --- */
+        .board-wrapper { flex-grow: 1; background: #fff; border-radius: 8px; border: 4px solid var(--wood); overflow: hidden; display: flex; justify-content: center; align-items: flex-start; padding-top: 5px; }
+        .svg-container { position: relative; }
+        .token { position: absolute; border-radius: 50%; z-index: 20; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: transform 0.5s ease-out; }
+        .p1 { width: 40px; height: 40px; background: var(--p1-color); border: 3px solid white; margin: -20px 0 0 -20px; }
+        .p2 { width: 40px; height: 40px; background: var(--p2-color); border: 3px solid white; margin: -20px 0 0 -20px; }
+        .ball { width: 12px; height: 12px; background: radial-gradient(circle at 30% 30%, #ffd166, #ff9f1c); z-index: 25; margin: -6px 0 0 -6px; transition: transform 0.7s cubic-bezier(0.1, 0.7, 0.1, 1); }
+
+        /* --- CONTROLS (BOTTOM) --- */
+        .dashboard { background: #2b2b36; padding: 10px; border-top: 2px solid #444; width: 100%; }
+        .stats { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 5px; }
+        .log-box { background: #111; height: 60px; overflow-y: auto; padding: 5px; font-size: 0.75rem; border-radius: 4px; color: #bbb; font-family: monospace; margin-bottom: 8px; }
+        .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+        button { padding: 10px; font-weight: bold; border-radius: 4px; border: none; cursor: pointer; font-size: 0.8rem; }
         .btn-main { background: #ff9f1c; color: #000; }
         .btn-alt { background: #444; color: #fff; }
-        button:disabled { opacity: 0.3; }
     </style>
 </head>
 <body>
@@ -58,16 +56,10 @@
 <div class="app-container">
     <div class="door-container">
         <div class="door-grid" id="door-ui">
-            <div class="door-cell" onclick="setTarget('TL', 5)">TL<br>5+</div>
-            <div class="door-cell" onclick="setTarget('TM', 4)">TM<br>4+</div>
-            <div class="door-cell" onclick="setTarget('TR', 5)">TR<br>5+</div>
-            <div class="door-cell" onclick="setTarget('ML', 4)">ML<br>4+</div>
-            <div class="door-cell selected" onclick="setTarget('MM', 2)">CTR<br>2+</div>
-            <div class="door-cell" onclick="setTarget('MR', 4)">MR<br>4+</div>
-            <div class="door-cell" onclick="setTarget('BL', 5)">BL<br>5+</div>
-            <div class="door-cell" onclick="setTarget('BM', 4)">BM<br>4+</div>
-            <div class="door-cell" onclick="setTarget('BR', 5)">BR<br>5+</div>
-            <div class="knob-overlay" id="knob-btn" onclick="setTarget('KNOB', 6)">KNOB</div>
+            <div class="door-cell" onclick="setT('TL',5)">TL</div><div class="door-cell" onclick="setT('TM',4)">TM</div><div class="door-cell" onclick="setT('TR',5)">TR</div>
+            <div class="door-cell" onclick="setT('ML',4)">ML</div><div class="door-cell selected" onclick="setT('MM',2)">CTR</div><div class="door-cell" onclick="setT('MR',4)">MR</div>
+            <div class="door-cell" onclick="setT('BL',5)">BL</div><div class="door-cell" onclick="setT('BM',4)">BM</div><div class="door-cell" onclick="setT('BR',5)">BR</div>
+            <div class="knob-overlay" id="kb" onclick="setT('KNOB',6)">KNOB</div>
         </div>
     </div>
 
@@ -80,32 +72,28 @@
     </div>
 
     <div class="dashboard">
-        <div class="stats-row">
-            <div style="color: var(--p1-color)">MINTZY: <span id="p1-s">0</span> | STAM: <span id="p1-st">10</span></div>
-            <div style="color: var(--p2-color)">TANGO: <span id="p2-s">0</span> | STAM: <span id="p2-st">10</span></div>
+        <div class="stats">
+            <div style="color:var(--p1-color)">P1: <span id="s1">0</span> (St:<span id="st1">10</span>)</div>
+            <div style="color:var(--p2-color)">P2: <span id="s2">0</span> (St:<span id="st2">10</span>)</div>
         </div>
-        
-        <div class="log-box" id="match-log">Match ready. Simulation mode available.</div>
-
-        <div class="controls">
-            <button class="btn-main" onclick="playTurn()" id="btn-shoot">Manual Swing</button>
-            <button class="btn-alt" onclick="toggleSim()" id="btn-sim">Start Auto-Sim</button>
-            <button class="btn-alt" onclick="exportLog()" style="grid-column: span 2; background: #222;">Export Match Log</button>
+        <div class="log-box" id="log">Ready...</div>
+        <div class="btn-row">
+            <button class="btn-main" onclick="playTurn()">SWING</button>
+            <button class="btn-alt" id="sim-btn" onclick="toggleSim()">AUTO-SIM</button>
         </div>
     </div>
 </div>
 
 <script>
-    const R = 18, W = Math.sqrt(3)*R, H = 2*R, COLS = 7, ROWS = 15;
+    const R = 15, W = Math.sqrt(3)*R, H = 2*R, COLS = 7, ROWS = 15;
     let s = {
-        p1: { id: 'Mintzy', x: 3, y: 14, score: 0, stam: 10, max: 10 },
-        p2: { id: 'Tango', x: 4, y: 14, score: 0, stam: 10, max: 10 },
+        p1: { id: 'Mintzy', x: 3, y: 14, score: 0, stam: 10 },
+        p2: { id: 'Tango', x: 4, y: 14, score: 0, stam: 10 },
         ball: { x: 3, y: 14, free: 3 },
-        active: 1, target: 'MM', targetTN: 2, isSim: false, isAnimating: false,
-        matchHistory: []
+        active: 1, target: 'MM', targetTN: 2, isSim: false, isAnim: false
     };
 
-    function buildBoard() {
+    function build() {
         const container = document.getElementById('board-container');
         let totalW = (COLS*W)+(W/2), totalH = (ROWS*H*0.75)+(H*0.25);
         container.style.width = totalW + 'px'; container.style.height = totalH + 'px';
@@ -117,107 +105,55 @@
                 let fill = c < 2 ? '#b5d0f5' : (c > 4 ? '#faeab0' : '#f0f0f0');
                 let pts = []; for(let i=0; i<6; i++) pts.push(`${cx + R * Math.cos(Math.PI/180 * (60*i-30))},${cy + R * Math.sin(Math.PI/180 * (60*i-30))}`);
                 let poly = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-                poly.setAttribute("points", pts.join(" ")); poly.setAttribute("fill", fill); poly.setAttribute("stroke", "#ccc");
+                poly.setAttribute("points", pts.join(" ")); poly.setAttribute("fill", fill); poly.setAttribute("stroke", "#ddd");
                 svg.appendChild(poly);
             }
         }
         container.insertBefore(svg, container.firstChild);
     }
 
-    function setTarget(code, tn) {
+    function setT(code, tn) {
         s.target = code; s.targetTN = tn;
         document.querySelectorAll('.door-cell, .knob-overlay').forEach(el => el.classList.remove('selected'));
         event.currentTarget.classList.add('selected');
     }
 
-    function log(msg) {
-        const box = document.getElementById('match-log');
-        box.innerHTML += `<div>${msg}</div>`;
-        box.scrollTop = box.scrollHeight;
-        s.matchHistory.push(msg.replace(/<[^>]*>/g, ''));
-    }
-
-    function updateView() {
+    function update() {
         let p1c = { x: (s.p1.x*W) + (s.p1.y%2!==0 ? W/2 : 0) + W/2, y: (s.p1.y*H*0.75) + H/2 };
         let p2c = { x: (s.p2.x*W) + (s.p2.y%2!==0 ? W/2 : 0) + W/2, y: (s.p2.y*H*0.75) + H/2 };
         let bc = { x: (s.ball.x*W) + (s.ball.y%2!==0 ? W/2 : 0) + W/2, y: (s.ball.y*H*0.75) + H/2 };
         document.getElementById('t-p1').style.transform = `translate(${p1c.x}px, ${p1c.y}px)`;
         document.getElementById('t-p2').style.transform = `translate(${p2c.x}px, ${p2c.y}px)`;
         document.getElementById('t-ball').style.transform = `translate(${bc.x}px, ${bc.y}px)`;
-        document.getElementById('p1-s').innerText = s.p1.score; document.getElementById('p2-s').innerText = s.p2.score;
-        document.getElementById('p1-st').innerText = s.p1.stam; document.getElementById('p2-st').innerText = s.p2.stam;
+        document.getElementById('s1').innerText = s.p1.score; document.getElementById('s2').innerText = s.p2.score;
+        document.getElementById('st1').innerText = s.p1.stam; document.getElementById('st2').innerText = s.p2.stam;
     }
 
     async function playTurn() {
-        if(s.isAnimating) return;
-        s.isAnimating = true;
-
+        if(s.isAnim) return; s.isAnim = true;
         let p = s.active === 1 ? s.p1 : s.p2, opp = s.active === 1 ? s.p2 : s.p1;
-        let dist = Math.max(Math.abs(p.x - s.ball.x), Math.abs(p.y - s.ball.y));
-        let cost = Math.max(0, dist - s.ball.free);
+        let cost = Math.max(0, Math.max(Math.abs(p.x - s.ball.x), Math.abs(p.y - s.ball.y)) - s.ball.free);
+        p.stam = Math.max(0, p.stam - cost); p.x = s.ball.x; p.y = s.ball.y;
+        update(); await new Promise(r => setTimeout(r, 500));
+
+        let roll = Math.floor(Math.random()*6)+1, mod = (p.stam <= 3 ? -1 : 0), total = roll + mod;
+        const l = document.getElementById('log');
+
+        if (total <= 0) { l.innerHTML = `Whiff! Pt to ${opp.id}`; hScore(opp); }
+        else if (s.target === 'KNOB' && roll === 6) { l.innerHTML = `KNOB HIT! 3 pts!`; hScore(p, 3); }
+        else if (total >= s.targetTN) {
+            let sx = (s.target.includes('L') ? 5 : (s.target.includes('R') ? 1 : 3));
+            let sy = (s.target.includes('B') ? 2 : (s.target.includes('T') ? 12 : 6));
+            if (Math.max(Math.abs(opp.x-sx), Math.abs(opp.y-sy)) > opp.stam+1) { l.innerHTML = `Winner! Pt to ${p.id}`; hScore(p); }
+            else { s.ball.x = sx; s.ball.y = sy; s.ball.free = 1; s.active = s.active === 1 ? 2 : 1; l.innerHTML = `${p.id} returns.`; }
+        } else { l.innerHTML = `Pop-up.`; s.ball.y = 10; s.active = s.active === 1 ? 2 : 1; }
         
-        p.stam = Math.max(0, p.stam - cost);
-        p.x = s.ball.x; p.y = s.ball.y;
-        updateView(); await new Promise(r => setTimeout(r, 600));
-
-        // Peak Condition & Fatigue math
-        let isPeak = (p.stam === 10 && p.x >= 2 && p.x <= 4);
-        let mod = (isPeak && s.target === 'KNOB' ? 1 : 0) + (p.stam <= 3 ? -1 : 0);
-        let roll = Math.floor(Math.random()*6)+1;
-        let total = roll + mod;
-
-        if (total <= 0) {
-            log(`${p.id} <b style="color:red">WHIFFED</b> (Roll: ${total})`);
-            handleScore(opp);
-        } else if (s.target === 'KNOB' && (roll === 6 || total >= 6)) {
-            log(`${p.id} hit the <b style="color:#ff9f1c">GLORY KNOB!</b>`);
-            handleScore(p, 3);
-        } else if (total >= s.targetTN) {
-            // Check if Unreturnable
-            let sx = (s.target.includes('L') ? 5 : (s.target.includes('R') ? 1 : 3)) + (Math.floor(Math.random()*3)-1);
-            let sy = (s.target.includes('B') ? 2 : (s.target.includes('T') ? 11 : 6)) + (Math.floor(Math.random()*3)-1);
-            
-            let oppDist = Math.max(Math.abs(opp.x - sx), Math.abs(opp.y - sy));
-            if (oppDist > opp.stam + 1) {
-                log(`${p.id} hit an <b style="color:#06d6a0">UNRETURNABLE!</b>`);
-                s.ball.x = sx; s.ball.y = sy; updateView();
-                await new Promise(r => setTimeout(r, 800));
-                handleScore(p);
-            } else {
-                s.ball.x = Math.max(0, Math.min(6, sx)); s.ball.y = sy;
-                s.ball.free = 1; s.active = s.active === 1 ? 2 : 1;
-                log(`${p.id} returns to ${s.target}`);
-            }
-        } else {
-            log(`${p.id} popped it up.`);
-            s.ball.free = 3; s.ball.y = 12; s.active = s.active === 1 ? 2 : 1;
-        }
-
-        updateView(); s.isAnimating = false;
-        if(s.isSim) setTimeout(playTurn, 1000);
+        update(); s.isAnim = false; if(s.isSim) setTimeout(playTurn, 800);
     }
 
-    function handleScore(winner, pts=1) {
-        winner.score += pts;
-        log(`POINT TO ${winner.id.toUpperCase()}!`);
-        s.p1.stam = s.p1.max; s.p2.stam = s.p2.max;
-        s.p1.x = 3; s.p1.y = 14; s.p2.x = 4; s.p2.y = 14; s.ball.x = 3; s.ball.y = 14;
-        s.active = winner === s.p1 ? 1 : 2;
-    }
-
-    function toggleSim() {
-        s.isSim = !s.isSim;
-        document.getElementById('btn-sim').innerText = s.isSim ? 'Stop Sim' : 'Start Auto-Sim';
-        if(s.isSim) playTurn();
-    }
-
-    function exportLog() {
-        let blob = new Blob([s.matchHistory.join('\n')], {type: 'text/plain'});
-        let a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-        a.download = '21knob_match_log.txt'; a.click();
-    }
-
-    buildBoard(); updateView();
+    function hScore(w, pts=1) { w.score += pts; s.p1.stam = 10; s.p2.stam = 10; s.p1.x = 3; s.p1.y = 14; s.p2.x = 4; s.p2.y = 14; s.ball.x = 3; s.ball.y = 14; s.active = (w === s.p1 ? 1 : 2); }
+    function toggleSim() { s.isSim = !s.isSim; document.getElementById('sim-btn').innerText = s.isSim ? 'STOP' : 'AUTO-SIM'; if(s.isSim) playTurn(); }
+    build(); update();
 </script>
 </body>
 </html>
