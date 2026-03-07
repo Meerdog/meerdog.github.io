@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>21 Knob: Interactive Simulator V5</title>
+    <title>21 Knob: Interactive Simulator V6</title>
     <style>
         :root {
             --lane-L: #8fb8ed; --lane-C: #e2e2e2; --lane-R: #f3db74;
             --p1-color: #2a6fdb; --p2-color: #d62828;
             --wood: #8b5a2b; --bg-dark: #1e1e24;
-            /* Smaller Hexes */
-            --hex-w: 30px; --hex-h: 26px; 
+            /* Recalculated for 12 rows, slightly larger */
+            --hex-w: 36px; --hex-h: 28px; 
         }
 
         * { box-sizing: border-box; }
@@ -56,7 +56,7 @@
             display: flex; flex-direction: column; align-items: center; position: relative;
         }
 
-        /* --- INTERACTIVE DOOR (LARGER) --- */
+        /* --- INTERACTIVE DOOR --- */
         .door-ui {
             width: 100%; max-width: 360px; height: 160px; background: #eab676; 
             border: 10px solid #5a3818; border-radius: 4px; display: flex; 
@@ -76,27 +76,30 @@
         .door-panel.selected { border: 3px solid #fff; box-shadow: 0 0 15px #fff; transform: scale(1.02); z-index: 2; }
         .frame-selected { box-shadow: inset 0 0 0 6px #9b5de5; }
         
-        /* THE KNOB (Massive) */
+        /* THE KNOB */
         .door-knob {
             position: absolute; left: 5px; top: 50%; transform: translateY(-50%);
             width: 55px; height: 55px; background: radial-gradient(circle, #ffe066, #d4af37);
             border-radius: 50%; border: 4px solid #8c7322; box-shadow: 3px 3px 8px rgba(0,0,0,0.6);
             display: flex; align-items: center; justify-content: center; font-size: 0.9rem; 
-            color: #000; font-weight: bold; text-align: center; line-height: 1.1;
+            color: #000; font-weight: bold; text-align: center; line-height: 1.1; transition: all 0.2s;
         }
         .door-knob:hover { transform: translateY(-50%) scale(1.05); }
         .knob-selected { border-color: #fff; box-shadow: 0 0 20px #fff, inset 0 0 10px #fff; transform: translateY(-50%) scale(1.15); z-index: 10;}
 
-        /* --- HEX GRID (SMALLER) --- */
+        /* --- VISIBLE HEX GRID --- */
         .hex-grid {
-            position: relative; width: 230px; height: 400px;
-            background: rgba(0,0,0,0.05); border-radius: 8px;
+            position: relative; width: 270px; height: 350px;
+            background: #555; /* Dark background acts as the grid lines */
+            border-radius: 8px; border: 2px solid #333;
         }
         .hex {
-            position: absolute; width: var(--hex-w); height: 34px;
+            position: absolute; width: var(--hex-w); height: 38px;
             clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 7px; color: rgba(0,0,0,0.15); transition: background 0.2s;
+            display: flex; align-items: center; justify-content: flex-start; padding-left: 5px;
+            font-size: 9px; color: rgba(0,0,0,0.3); font-weight: bold;
+            transition: background 0.2s;
+            transform: scale(0.94); /* THIS CREATES THE GRID SPACING */
         }
         .hex.lane-L { background-color: var(--lane-L); }
         .hex.lane-C { background-color: var(--lane-C); }
@@ -245,8 +248,7 @@
         <button class="primary" onclick="playTurn()" id="btn-shoot">Run, Aim & Shoot</button>
         <button class="secondary" onclick="catchBreath()" id="btn-breath">Skip Turn (+3 Stamina)</button>
 
-        <div class="math-box" id="math-box">
-            </div>
+        <div class="math-box" id="math-box"></div>
 
         <div class="dice-container">
             <div class="dice" id="dice-visual">?</div>
@@ -268,12 +270,13 @@
 </div>
 
 <script>
-    const COLS = 7, ROWS = 15, HEX_W = 32, HEX_H = 26; // Adjusted for tight fit
+    // Reduced to 12 rows!
+    const COLS = 7, ROWS = 12, HEX_W = 36, HEX_H = 28; 
 
     let s = {
-        p1: { id: 'P1', x: 3, y: 14, score: 0, stam: 10 },
-        p2: { id: 'P2', x: 3, y: 12, score: 0, stam: 10 },
-        ball: { x: 3, y: 14, state: 'Mid', freeMv: 3 },
+        p1: { id: 'P1', x: 3, y: 11, score: 0, stam: 10 },
+        p2: { id: 'P2', x: 3, y: 9, score: 0, stam: 10 },
+        ball: { x: 3, y: 11, state: 'Mid', freeMv: 3 },
         active: 1, isAnimating: false, target: 'Center'
     };
 
@@ -290,16 +293,20 @@
                 hex.className = 'hex ' + (x < 2 ? 'lane-L' : (x > 4 ? 'lane-R' : 'lane-C'));
                 hex.style.left = (x * HEX_W + (y % 2 !== 0 ? HEX_W / 2 : 0)) + 'px';
                 hex.style.top = (y * HEX_H) + 'px';
+                if(x===0) hex.innerHTML = y+1; // Subtle row markers
                 grid.appendChild(hex);
             }
         }
     }
 
     function getPixelCoords(x, y, type = 'token') {
-        if(type === 'door') return { x: 100, y: -60 }; 
+        if(type === 'door') return { x: 120, y: -60 }; 
         let px = x * HEX_W + (y % 2 !== 0 ? HEX_W / 2 : 0);
         let py = y * HEX_H;
-        return { x: px + (type==='ball' ? 9 : 6), y: py + (type==='ball' ? 11 : 7) };
+        // Center dynamically based on new sizing
+        let offX = type === 'ball' ? (36-12)/2 : (36-20)/2;
+        let offY = type === 'ball' ? (38-12)/2 : (38-20)/2;
+        return { x: px + offX, y: py + offY };
     }
 
     function updateTokens() {
@@ -381,7 +388,6 @@
     const sleep = ms => new Promise(r => setTimeout(r, ms));
     function setButtons(disabled) { document.getElementById('btn-shoot').disabled = disabled; document.getElementById('btn-breath').disabled = disabled; }
 
-    // --- SLOWED DOWN ANIMATION SEQUENCE ---
     async function playTurn() {
         if(s.isAnimating) return;
         s.isAnimating = true; setButtons(true);
@@ -390,7 +396,6 @@
         let opp = s.active === 1 ? s.p2 : s.p1;
         let power = parseInt(document.getElementById('sel-power').value);
         
-        // 1. Move Player
         let dist = Math.max(Math.abs(p.x - s.ball.x), Math.abs(p.y - s.ball.y));
         let cost = Math.max(0, dist - s.ball.freeMv);
         
@@ -401,16 +406,12 @@
 
         p.x = s.ball.x; p.y = s.ball.y;
         updateTokens(); renderUI();
-        
-        // *SLOW* Wait for player to arrive
         await sleep(800); 
 
-        // 2. Show Math Explicitly
         let tnBase = { 'Top':3, 'Center':2, 'Bottom':4, 'Frame':5, 'Knob':6 }[s.target];
         let mod = calculateMods(p, cost, power);
         let finalReq = tnBase - mod;
         
         let mathBox = document.getElementById('math-box');
         mathBox.style.display = 'flex';
-        mathBox.innerHTML = `<div style="color:#aaa">Base TN ${tnBase} | Modifiers: ${mod >= 0 ? '+'+mod : mod}</div>
-                             <div style="font-size:1.4rem; color:#fff">Roll Required: <b>${finalReq > 6 && s.target === 'Knob' ? 'Natural 6
+      
