@@ -3,70 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>21 Knob: AI Playtest Simulator</title>
+    <title>21 Knob: Interactive Simulator</title>
     <style>
         :root {
-            --lane-L: #8fb8ed;
-            --lane-C: #e2e2e2;
-            --lane-R: #f3db74;
-            --p1-color: #2a6fdb;
-            --p2-color: #d62828;
-            --wood: #8b5a2b;
-            --bg-dark: #1e1e24;
-            --hex-w: 40px;
-            --hex-h: 34.5px;
+            --lane-L: #8fb8ed; --lane-C: #e2e2e2; --lane-R: #f3db74;
+            --p1-color: #2a6fdb; --p2-color: #d62828;
+            --wood: #8b5a2b; --bg-dark: #1e1e24;
+            --hex-w: 40px; --hex-h: 34.5px;
         }
 
         * { box-sizing: border-box; }
 
         body {
             font-family: 'Segoe UI', system-ui, sans-serif;
-            background-color: var(--bg-dark);
-            color: #fff;
-            margin: 0;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            background-color: var(--bg-dark); color: #fff;
+            margin: 0; padding: 10px;
+            display: flex; justify-content: center;
         }
 
         .app-container {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            width: 100%;
-            max-width: 800px;
+            display: flex; flex-direction: row; flex-wrap: wrap;
+            gap: 15px; width: 100%; max-width: 900px; justify-content: center;
         }
 
-        @media(min-width: 768px) {
-            .app-container { flex-direction: row; align-items: flex-start; justify-content: center; }
-        }
-
+        /* --- DASHBOARDS --- */
         .dashboards {
             display: flex; justify-content: space-between; gap: 10px; width: 100%;
-            background: #2b2b36; padding: 10px; border-radius: 8px;
+            background: #2b2b36; padding: 10px 20px; border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         }
         .player-card { flex: 1; text-align: center; }
-        .player-card h3 { margin: 0 0 5px 0; font-size: 1.1rem; }
-        .score { font-size: 1.5rem; font-weight: bold; margin-bottom: 5px; }
-        .stamina-bar { display: flex; justify-content: center; gap: 2px; }
-        .pip { width: 10px; height: 12px; border-radius: 2px; }
-        .pip.filled { background: #06d6a0; }
-        .pip.empty { background: #444; }
+        .player-card h3 { margin: 0 0 5px 0; font-size: 1.2rem; }
+        .score { font-size: 1.8rem; font-weight: bold; line-height: 1; margin-bottom: 5px; }
+        .stam-text { font-size: 1.1rem; font-weight: bold; color: #06d6a0; }
+        .stam-text.low { color: #d62828; }
 
+        /* --- PLAYING FIELD --- */
+        .center-column {
+            display: flex; flex-direction: column; align-items: center; gap: 10px;
+        }
         .board-wrapper {
-            background: #fff; padding: 10px; border-radius: 12px;
-            border: 6px solid var(--wood);
+            background: #fff; padding: 10px 10px 20px 10px; border-radius: 12px;
+            border: 6px solid var(--wood); box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
             display: flex; flex-direction: column; align-items: center;
-            margin: 0 auto;
-        }
-        .door-target {
-            width: 100%; max-width: 310px; height: 35px;
-            background: linear-gradient(to bottom, #a06b3c, var(--wood));
-            color: white; text-align: center; line-height: 35px;
-            font-weight: 800; border-radius: 4px; margin-bottom: 10px;
+            position: relative;
         }
 
+        /* --- INTERACTIVE DOOR --- */
+        .door-ui {
+            width: 300px; height: 120px; background: #eab676; border: 8px solid #5a3818;
+            border-radius: 4px; display: flex; flex-direction: column; gap: 5px; padding: 5px;
+            position: relative; cursor: pointer; margin-bottom: 10px;
+        }
+        .door-ui.disabled { pointer-events: none; opacity: 0.8; }
+        .door-panel {
+            flex: 1; display: flex; align-items: center; justify-content: center;
+            font-weight: bold; color: #000; border-radius: 2px; border: 2px solid transparent;
+            transition: all 0.2s; font-size: 0.85rem;
+        }
+        .dp-top { background: #8fb8ed; }
+        .dp-center { background: #f4a261; }
+        .dp-bottom { background: #2a9d8f; }
+        
+        /* Selection Highlight */
+        .door-panel.selected { border: 3px solid #fff; box-shadow: 0 0 10px #fff; transform: scale(1.02); z-index: 2; }
+        .frame-selected { box-shadow: inset 0 0 0 6px #9b5de5; }
+        
+        .door-knob {
+            position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+            width: 35px; height: 35px; background: radial-gradient(circle, #ffe066, #d4af37);
+            border-radius: 50%; border: 3px solid #8c7322; box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+            display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: #000; font-weight: bold;
+        }
+        .knob-selected { border-color: #fff; box-shadow: 0 0 15px #fff; transform: translateY(-50%) scale(1.1); }
+
+        /* --- HEX GRID --- */
         .hex-grid {
             position: relative; width: 315px; height: 530px;
             background: rgba(0,0,0,0.05); border-radius: 8px;
@@ -81,67 +92,87 @@
         .hex.lane-C { background-color: var(--lane-C); }
         .hex.lane-R { background-color: var(--lane-R); }
 
+        /* --- TOKENS --- */
         .token {
-            position: absolute; border-radius: 50%;
-            transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
-            z-index: 10; display: flex; align-items: center; justify-content: center;
+            position: absolute; border-radius: 50%; z-index: 10;
+            display: flex; align-items: center; justify-content: center;
             font-weight: bold; color: white; font-size: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.5);
+            transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
         }
         .p1 { width: 26px; height: 26px; background: var(--p1-color); border: 2px solid white; }
         .p2 { width: 26px; height: 26px; background: var(--p2-color); border: 2px solid white; }
+        
         .ball {
             width: 16px; height: 16px; background: radial-gradient(circle at 30% 30%, #ffd166, #ff9f1c);
-            z-index: 15; transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 15; transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); /* Faster for hits */
         }
 
+        /* --- CONTROLS SIDEBAR --- */
         .controls {
             background: #2b2b36; padding: 15px; border-radius: 8px;
-            width: 100%; display: flex; flex-direction: column; gap: 12px;
+            width: 320px; display: flex; flex-direction: column; gap: 12px;
         }
-        .ai-panel { background: #3d1c1c; padding: 10px; border-radius: 6px; border-left: 4px solid var(--p2-color); }
-        .info-panel { background: #1e1e24; padding: 10px; border-radius: 6px; border-left: 4px solid #ff9f1c; }
+        .turn-banner { font-size: 1.4rem; font-weight: bold; text-align: center; margin: 0; }
         
-        select, button {
-            width: 100%; padding: 12px; font-size: 1rem; border-radius: 6px;
-            border: none; outline: none; font-family: inherit;
+        /* DICE ROLL UI */
+        .dice-container {
+            display: flex; align-items: center; justify-content: center; gap: 15px;
+            background: #1e1e24; padding: 15px; border-radius: 8px;
         }
-        button.primary { background: #ff9f1c; color: #000; font-weight: 800; text-transform: uppercase; }
-        button.primary:active { transform: translateY(2px); }
-        button.primary:disabled { background: #555; color: #888; cursor: not-allowed; }
+        .dice {
+            width: 50px; height: 50px; background: #fff; color: #000;
+            border-radius: 8px; display: flex; align-items: center; justify-content: center;
+            font-size: 2rem; font-weight: bold; box-shadow: inset 0 0 10px rgba(0,0,0,0.2), 0 4px 8px rgba(0,0,0,0.5);
+            transition: transform 0.1s;
+        }
+        .dice.rolling { animation: shake 0.2s infinite; }
+        @keyframes shake { 0% {transform: rotate(-10deg);} 50% {transform: rotate(10deg);} 100% {transform: rotate(-10deg);} }
+
+        .info-panel { background: #1e1e24; padding: 10px; border-radius: 6px; border-left: 4px solid #ff9f1c; font-size: 0.9rem;}
+        
+        select, button { width: 100%; padding: 12px; font-size: 1rem; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; }
+        button.primary { background: #ff9f1c; color: #000; text-transform: uppercase; box-shadow: 0 4px 0 #cc7a00; }
+        button.primary:active { transform: translateY(4px); box-shadow: none; }
+        button:disabled { background: #555; color: #888; box-shadow: none; cursor: not-allowed; }
         button.secondary { background: #555; color: white; margin-top: -5px; }
 
         .log {
-            background: #111; height: 120px; overflow-y: auto; padding: 10px;
+            background: #111; height: 180px; overflow-y: auto; padding: 10px;
             font-size: 0.85rem; border-radius: 6px; color: #aaa; line-height: 1.4;
         }
         .log b { color: #ff9f1c; }
         .log .p1-text { color: var(--p1-color); font-weight: bold; }
         .log .p2-text { color: var(--p2-color); font-weight: bold; }
-        
-        #ai-status { color: #06d6a0; font-weight: bold; font-size: 0.9rem; text-align: center; height: 20px;}
     </style>
 </head>
 <body>
 
 <div class="app-container">
     
-    <div style="display: flex; flex-direction: column; gap: 15px; align-items: center; width: 100%; max-width: 350px;">
+    <div class="center-column">
         <div class="dashboards">
             <div class="player-card">
                 <h3 style="color: var(--p1-color)">PLAYER 1</h3>
                 <div class="score" id="p1-score">0</div>
-                <div class="stamina-bar" id="p1-stam"></div>
+                <div>Stamina: <span class="stam-text" id="p1-stam">10/10</span></div>
             </div>
             <div style="width: 2px; background: #444;"></div>
             <div class="player-card">
                 <h3 style="color: var(--p2-color)">PLAYER 2</h3>
                 <div class="score" id="p2-score">0</div>
-                <div class="stamina-bar" id="p2-stam"></div>
+                <div>Stamina: <span class="stam-text" id="p2-stam">10/10</span></div>
             </div>
         </div>
 
         <div class="board-wrapper">
-            <div class="door-target">3D DOOR STANDEE</div>
+            <div class="door-ui" id="door-ui" onclick="selectFrame(event)">
+                <div class="door-panel dp-top" id="dp-Top" onclick="setTarget('Top', event)">TOP PANEL (TN 3+)</div>
+                <div class="door-panel dp-center selected" id="dp-Center" onclick="setTarget('Center', event)">CENTER PANEL (TN 2+)</div>
+                <div class="door-panel dp-bottom" id="dp-Bottom" onclick="setTarget('Bottom', event)">BOTTOM PANEL (TN 4+)</div>
+                <div class="door-knob" id="dp-Knob" onclick="setTarget('Knob', event)">6!</div>
+                <div style="position: absolute; bottom: -25px; width: 100%; text-align: center; color: #222; font-weight: bold; font-size: 0.8rem; pointer-events: none;">Click edges for FRAME (TN 5+)</div>
+            </div>
+
             <div class="hex-grid" id="grid">
                 <div id="t-p1" class="token p1">1</div>
                 <div id="t-p2" class="token p2">2</div>
@@ -151,46 +182,42 @@
     </div>
 
     <div class="controls">
-        <h2 style="margin: 0; text-align: center;" id="turn-banner">P1'S TURN</h2>
-        <div id="ai-status"></div>
-
-        <div class="ai-panel">
-            <label style="font-size: 0.85rem; color: #aaa;">Player 2 Controls:</label>
-            <select id="sel-p2-mode">
-                <option value="human">Human (Pass & Play)</option>
-                <option value="ai-safe">AI: Conservative</option>
-                <option value="ai-balanced" selected>AI: Balanced</option>
-                <option value="ai-aggro">AI: Aggressive</option>
-            </select>
-        </div>
+        <h2 class="turn-banner" id="turn-banner">P1'S TURN</h2>
         
+        <div class="dice-container">
+            <div class="dice" id="dice-visual">?</div>
+            <div style="font-size: 0.85rem; color: #aaa;">
+                Target: <b id="ui-target-text" style="color: white;">Center Panel</b><br>
+                Modified Target: <b id="ui-tn" style="color: #ff9f1c;">TN 2+</b>
+            </div>
+        </div>
+
         <div class="info-panel">
-            <b>Ball State:</b> <span id="ui-state">Mid</span><br>
-            <b>Cost to Reach:</b> <span id="ui-cost">0</span> Stamina
+            <b>Incoming Ball:</b> <span id="ui-state">Mid</span><br>
+            <b>Distance Cost:</b> <span id="ui-cost">0</span> Stamina
         </div>
 
         <div>
-            <select id="sel-target">
-                <option value="Top">Top Panel (TN 3) - Lob</option>
-                <option value="Center" selected>Center Panel (TN 2) - Safe</option>
-                <option value="Bottom">Bottom Panel (TN 4) - Drop</option>
-                <option value="Frame">Door Frame (TN 5) - Chaos</option>
-                <option value="Knob">The Knob (TN 6) - Glory!</option>
-            </select>
-        </div>
-
-        <div>
-            <select id="sel-power">
+            <label style="font-size: 0.85rem; color: #aaa;">Swing Power:</label>
+            <select id="sel-power" onchange="updateMath()">
                 <option value="1">Power 1 (+1 Acc, Opp Gets 3 Moves)</option>
                 <option value="2" selected>Power 2 (0 Acc, Opp Gets 1 Move)</option>
                 <option value="3">Power 3 (-2 Acc, Opp Gets 0 Moves)</option>
             </select>
         </div>
 
-        <button class="primary" onclick="playTurn()" id="btn-shoot">Run & Shoot</button>
-        <button class="secondary" onclick="catchBreath()" id="btn-breath">Catch Breath (+3 Stamina)</button>
+        <button class="primary" onclick="playTurn()" id="btn-shoot">Run, Aim & Shoot</button>
+        <button class="secondary" onclick="catchBreath()" id="btn-breath">Skip Turn (+3 Stamina)</button>
 
-        <div class="log" id="log-box">Welcome to the Foyer.<br>Player 1, you have the serve!</div>
+        <div class="log" id="log-box">Welcome to the Foyer.<br>Player 1, you serve!</div>
+
+        <div style="margin-top: 10px; border-top: 1px solid #444; padding-top: 10px;">
+            <label style="font-size: 0.85rem; color: #aaa;">Player 2 AI:</label>
+            <select id="sel-p2-mode">
+                <option value="human">Human (Pass & Play)</option>
+                <option value="ai-balanced" selected>AI: Balanced</option>
+            </select>
+        </div>
     </div>
 
 </div>
@@ -199,10 +226,11 @@
     const COLS = 7, ROWS = 15, HEX_W = 42, HEX_H = 34.5;
 
     let s = {
-        p1: { id: 'P1', class: 'p1-text', x: 3, y: 14, score: 0, stam: 10 },
-        p2: { id: 'P2', class: 'p2-text', x: 3, y: 12, score: 0, stam: 10 },
+        p1: { id: 'P1', class: 'p1-text', x: 3, y: 14, score: 0, stam: 10, maxStam: 10 },
+        p2: { id: 'P2', class: 'p2-text', x: 3, y: 12, score: 0, stam: 10, maxStam: 10 },
         ball: { x: 3, y: 14, state: 'Mid', freeMv: 3 },
-        active: 1, isAnimating: false
+        active: 1, isAnimating: false,
+        target: 'Center' // Default target
     };
 
     function buildGrid() {
@@ -218,10 +246,11 @@
         }
     }
 
-    function getPixelCoords(x, y, isBall = false) {
+    function getPixelCoords(x, y, type = 'token') {
+        if(type === 'door') return { x: 150, y: -80 }; // Coordinates relative to grid for the Door Standee
         let px = x * HEX_W + (y % 2 !== 0 ? HEX_W / 2 : 0);
         let py = y * HEX_H;
-        return { x: px + (isBall ? 12 : 7), y: py + (isBall ? 15 : 10) };
+        return { x: px + (type==='ball' ? 12 : 7), y: py + (type==='ball' ? 15 : 10) };
     }
 
     function updateTokens() {
@@ -229,28 +258,77 @@
         document.getElementById('t-p1').style.transform = `translate(${p1.x}px, ${p1.y}px)`;
         let p2 = getPixelCoords(s.p2.x, s.p2.y);
         document.getElementById('t-p2').style.transform = `translate(${p2.x}px, ${p2.y}px)`;
-        let b = getPixelCoords(s.ball.x, s.ball.y, true);
+        let b = getPixelCoords(s.ball.x, s.ball.y, 'ball');
         document.getElementById('t-ball').style.transform = `translate(${b.x}px, ${b.y}px)`;
+    }
+
+    // --- DOOR INTERACTION ---
+    function selectFrame(e) {
+        if (e.target.id === 'door-ui') setTarget('Frame', null);
+    }
+    function setTarget(targetZone, event) {
+        if(event) event.stopPropagation();
+        if(s.isAnimating || (s.active === 2 && document.getElementById('sel-p2-mode').value !== 'human')) return;
+        
+        s.target = targetZone;
+        
+        // Remove old selection
+        document.querySelectorAll('.door-panel').forEach(el => el.classList.remove('selected'));
+        document.getElementById('door-ui').classList.remove('frame-selected');
+        document.getElementById('dp-Knob').classList.remove('knob-selected');
+
+        // Apply new
+        if(targetZone === 'Frame') document.getElementById('door-ui').classList.add('frame-selected');
+        else if (targetZone === 'Knob') document.getElementById('dp-Knob').classList.add('knob-selected');
+        else document.getElementById('dp-'+targetZone).classList.add('selected');
+
+        document.getElementById('ui-target-text').innerText = targetZone;
+        updateMath();
+    }
+
+    function updateMath() {
+        let p = s.active === 1 ? s.p1 : s.p2;
+        let dist = Math.max(Math.abs(p.x - s.ball.x), Math.abs(p.y - s.ball.y));
+        let cost = Math.max(0, dist - s.ball.freeMv);
+        
+        document.getElementById('ui-cost').innerText = cost;
+        document.getElementById('ui-cost').style.color = cost > p.stam ? '#d62828' : 'white';
+
+        let tnBase = { 'Top':3, 'Center':2, 'Bottom':4, 'Frame':5, 'Knob':6 }[s.target];
+        let power = parseInt(document.getElementById('sel-power').value);
+        let mod = 0;
+        
+        if(cost >= 3) mod -= 1; 
+        if(s.ball.x < 2 || s.ball.x > 4) mod -= 1; // using ball pos as proxy for player destination
+        if(s.ball.state === 'Low' && s.target !== 'Bottom') mod -= 2; 
+        if(s.ball.state === 'High' && power === 3) mod += 0; 
+        else if(power === 3) mod -= 2;
+        else if(power === 1) mod += 1;
+
+        let finalReq = tnBase - mod;
+        document.getElementById('ui-tn').innerText = `Need ${finalReq}+`;
     }
 
     function renderUI() {
         document.getElementById('p1-score').innerText = s.p1.score;
         document.getElementById('p2-score').innerText = s.p2.score;
         
-        const drawStam = (id, stam) => {
-            document.getElementById(id+'-stam').innerHTML = Array.from({length:10}, (_,i) => 
-                `<div class="pip ${i < stam ? 'filled' : 'empty'}"></div>`).join('');
-        };
-        drawStam('p1', s.p1.stam); drawStam('p2', s.p2.stam);
+        let p1st = document.getElementById('p1-stam');
+        p1st.innerText = `${s.p1.stam}/${s.p1.maxStam}`;
+        p1st.className = `stam-text ${s.p1.stam <= 2 ? 'low' : ''}`;
+        
+        let p2st = document.getElementById('p2-stam');
+        p2st.innerText = `${s.p2.stam}/${s.p2.maxStam}`;
+        p2st.className = `stam-text ${s.p2.stam <= 2 ? 'low' : ''}`;
 
-        let activeP = s.active === 1 ? s.p1 : s.p2;
         let banner = document.getElementById('turn-banner');
-        banner.innerText = `${activeP.id}'S TURN`;
+        banner.innerText = `${s.active === 1 ? s.p1.id : s.p2.id}'S TURN`;
         banner.style.color = s.active === 1 ? 'var(--p1-color)' : 'var(--p2-color)';
 
         document.getElementById('ui-state').innerText = s.ball.state;
-        let dist = Math.max(Math.abs(activeP.x - s.ball.x), Math.abs(activeP.y - s.ball.y));
-        document.getElementById('ui-cost').innerText = Math.max(0, dist - s.ball.freeMv);
+        updateMath();
+        
+        document.getElementById('door-ui').classList.toggle('disabled', s.isAnimating);
     }
 
     function log(msg) {
@@ -266,77 +344,72 @@
         document.getElementById('btn-breath').disabled = disabled;
     }
 
-    // --- AI LOGIC ---
+    // --- ANIMATIONS & TURN LOGIC ---
+    async function animateDiceRoll(finalResult) {
+        const dice = document.getElementById('dice-visual');
+        dice.classList.add('rolling');
+        for(let i=0; i<10; i++) {
+            dice.innerText = Math.floor(Math.random()*6)+1;
+            await sleep(50);
+        }
+        dice.classList.remove('rolling');
+        dice.innerText = finalResult;
+        
+        // Color code dice
+        if (finalResult >= 5) dice.style.color = '#2a9d8f';
+        else if (finalResult <= 2) dice.style.color = '#d62828';
+        else dice.style.color = '#000';
+    }
+
     async function triggerAI() {
         let mode = document.getElementById('sel-p2-mode').value;
         if (mode === 'human' || s.active === 1) return;
 
         setButtons(true);
-        document.getElementById('ai-status').innerText = "🤖 AI is planning its shot...";
-        await sleep(1500); // Give user time to see what AI is dealing with
+        await sleep(800);
 
         let cost = Math.max(0, Math.max(Math.abs(s.p2.x - s.ball.x), Math.abs(s.p2.y - s.ball.y)) - s.ball.freeMv);
         let target = 'Center', power = 2;
 
-        if (s.p2.score === 21) {
-            target = 'Knob'; power = 1;
-        } else if (cost > s.p2.stam) {
-            target = 'Center'; power = 1; // Forced dive
-        } else if (s.p2.stam <= 2 && mode === 'ai-safe') {
-            document.getElementById('ai-status').innerText = "";
-            catchBreath();
-            return;
-        } else if (s.ball.state === 'High') {
-            if (mode === 'ai-aggro' || mode === 'ai-balanced') {
-                power = 3; target = Math.random() > 0.5 ? 'Bottom' : 'Frame';
-            } else { power = 2; target = 'Center'; }
-        } else {
-            if (mode === 'ai-aggro') {
-                power = Math.random() > 0.4 ? 3 : 2; target = Math.random() > 0.4 ? 'Bottom' : 'Frame';
-            } else if (mode === 'ai-balanced') {
-                power = 2; target = Math.random() > 0.5 ? 'Center' : 'Bottom';
-            } else { // safe
-                power = 1; target = Math.random() > 0.5 ? 'Top' : 'Center';
-            }
-        }
+        if (s.p2.score === 21) { target = 'Knob'; power = 1; }
+        else if (cost > s.p2.stam) { target = 'Center'; power = 1; }
+        else if (s.ball.state === 'High') { power = 3; target = Math.random() > 0.5 ? 'Bottom' : 'Frame'; }
+        else { power = 2; target = Math.random() > 0.5 ? 'Center' : 'Bottom'; }
 
-        // Visually update dropdowns so player sees AI's choice
-        document.getElementById('sel-target').value = target;
         document.getElementById('sel-power').value = power;
-        document.getElementById('ai-status').innerText = `🤖 AI selects ${target} (Power ${power})`;
+        setTarget(target, null);
         
-        await sleep(1000);
-        document.getElementById('ai-status').innerText = "";
+        await sleep(600);
         playTurn();
     }
 
-    // --- CORE TURN LOGIC ---
     async function playTurn() {
         if(s.isAnimating) return;
         s.isAnimating = true; setButtons(true);
 
         let p = s.active === 1 ? s.p1 : s.p2;
         let opp = s.active === 1 ? s.p2 : s.p1;
-        let target = document.getElementById('sel-target').value;
         let power = parseInt(document.getElementById('sel-power').value);
         
+        // 1. Move Player
         let dist = Math.max(Math.abs(p.x - s.ball.x), Math.abs(p.y - s.ball.y));
         let cost = Math.max(0, dist - s.ball.freeMv);
         
         if (cost > p.stam) {
             log(`<b>DIVE!</b> <span class="${p.class}">${p.id}</span> dives! Stamina = 0.`);
-            p.stam = 0; power = 1; target = 'Center';
+            p.stam = 0; power = 1; setTarget('Center', null);
         } else { p.stam -= cost; }
 
         p.x = s.ball.x; p.y = s.ball.y;
         updateTokens(); renderUI();
-        await sleep(600);
+        await sleep(500); // Player running animation
 
-        let tn = { 'Top':3, 'Center':2, 'Bottom':4, 'Frame':5, 'Knob':6 }[target];
+        // 2. Roll & Math
+        let tn = { 'Top':3, 'Center':2, 'Bottom':4, 'Frame':5, 'Knob':6 }[s.target];
         let mod = 0;
         if(cost >= 3) mod -= 1; 
         if(p.x < 2 || p.x > 4) mod -= 1; 
-        if(s.ball.state === 'Low' && target !== 'Bottom') mod -= 2; 
+        if(s.ball.state === 'Low' && s.target !== 'Bottom') mod -= 2; 
         if(s.ball.state === 'High' && power === 3) mod += 0; 
         else if(power === 3) mod -= 2;
         else if(power === 1) mod += 1;
@@ -344,10 +417,19 @@
         let roll = Math.floor(Math.random()*6)+1;
         let total = roll + mod;
         
-        log(`<span class="${p.class}">${p.id}</span> aims at ${target}. Needs ${tn}.`);
+        log(`<span class="${p.class}">${p.id}</span> aims at ${s.target}.`);
+        
+        // Visual Dice Roll
+        await animateDiceRoll(roll);
         log(`Rolled ${roll} + (${mod} mod) = <b>${total}</b>.`);
-        await sleep(500);
+        await sleep(300);
 
+        // 3. Ball to Door Animation
+        let bDoor = getPixelCoords(0, 0, 'door');
+        document.getElementById('t-ball').style.transform = `translate(${bDoor.x}px, ${bDoor.y}px)`;
+        await sleep(350); // Ball flying to door
+
+        // 4. Resolve & Scatter
         if (total <= 0) {
             log(`<b>WHIFF!</b> Hit the wall. <span class="${opp.class}">${opp.id}</span> scores!`);
             handleScore(opp);
@@ -355,24 +437,25 @@
             log(`<b>FAIL.</b> Ball pops High!`);
             s.ball.state = 'High'; s.ball.freeMv = 3; scatterBall(8, 10); s.active = s.active === 1 ? 2 : 1;
         } else {
-            if(target === 'Knob') {
+            if(s.target === 'Knob') {
                 log(`<b>DING!</b> Knob hit! <span class="${p.class}">${p.id}</span> scores 3!`);
                 handleScore(p, 3);
-            } else if (target === 'Center' && p.x >=2 && p.x <=4 && roll === 6) {
+            } else if (s.target === 'Center' && p.x >=2 && p.x <=4 && roll === 6) {
                 log(`<b>PIPELINE!</b> Accidental Knob Snipe! 3 points!`);
                 handleScore(p, 3);
             } else {
                 log(`<b>SOLID HIT.</b>`);
-                if(target === 'Top') { s.ball.state = 'High'; scatterBall(8, 10); }
-                if(target === 'Center') { s.ball.state = 'Mid'; scatterBall(5, 7); }
-                if(target === 'Bottom') { s.ball.state = 'Low'; scatterBall(1, 3); }
-                if(target === 'Frame') { s.ball.state = 'Mid'; scatterBall(2, 12); }
+                if(s.target === 'Top') { s.ball.state = 'High'; scatterBall(8, 10); }
+                if(s.target === 'Center') { s.ball.state = 'Mid'; scatterBall(5, 7); }
+                if(s.target === 'Bottom') { s.ball.state = 'Low'; scatterBall(1, 3); }
+                if(s.target === 'Frame') { s.ball.state = 'Mid'; scatterBall(2, 12); }
                 
                 s.ball.freeMv = power === 1 ? 3 : (power === 2 ? 1 : 0);
                 s.active = s.active === 1 ? 2 : 1; 
             }
         }
 
+        // Ball Final Scatter Animation
         updateTokens(); renderUI();
         s.isAnimating = false;
         
