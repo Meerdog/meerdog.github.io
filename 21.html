@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>21 Knob: V25 Native Render</title>
+    <title>21 Knob: Bulletproof V26</title>
     <style>
         :root {
             --p1-color: #4361ee; --p2-color: #f72585;
@@ -61,19 +61,44 @@
         }
         .knob-physical.selected { border-color: #fff; box-shadow: 0 0 15px #f72585; transform: translate(-50%, -50%) scale(1.1); }
 
-        /* --- 3. THE BULLETPROOF SVG BOARD --- */
+        /* --- 3. THE BULLETPROOF BOARD --- */
         .board-wrapper {
             background: #dcdcdc; border: 8px solid var(--wood-dark); border-top: 4px solid #111;
-            border-radius: 0 0 8px 8px; width: 100%; display: flex; justify-content: center;
-            min-height: 200px; /* Fallback for older browsers */
+            border-radius: 0 0 8px 8px; width: 100%; position: relative;
         }
-        svg { width: 100%; height: auto; max-height: 45vh; display: block; }
         
-        /* Token Graphics */
-        .dice-rect { fill: white; stroke: #333; stroke-width: 3; rx: 8; }
-        .dice-text { font-size: 24px; font-weight: 900; fill: #000; font-family: sans-serif; text-anchor: middle; dominant-baseline: central; }
-        .token-group { transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1); }
-        .ball-group { transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .board-container {
+            position: relative; width: 100%; aspect-ratio: 260 / 460; overflow: hidden;
+        }
+        
+        .board-svg {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;
+        }
+        
+        /* Native HTML Tokens (Percentage Based) */
+        .token {
+            position: absolute; z-index: 20;
+            display: flex; align-items: center; justify-content: center; font-size: 18px;
+            transform: translate(-50%, -50%); /* Perfectly centers the div on its exact coordinate */
+            transition: left 0.6s cubic-bezier(0.25, 1, 0.5, 1), top 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.5); border-radius: 50%;
+        }
+        .p1 { width: 34px; height: 34px; background: var(--p1-color); border: 2px solid white; }
+        .p2 { width: 34px; height: 34px; background: var(--p2-color); border: 2px solid white; }
+        .ball { 
+            width: 14px; height: 14px; background: #ff9f1c; border: 1px solid #333; z-index: 25; 
+            transition: left 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), top 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* HTML Cinematic Dice */
+        .dice-overlay {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 70px; height: 70px; background: #fff; color: #000; border-radius: 12px;
+            display: none; align-items: center; justify-content: center;
+            font-size: 3rem; font-weight: 900; z-index: 50; border: 4px solid #333;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            transition: transform 0.1s linear;
+        }
 
         /* --- 4. SWING CONTROLS --- */
         .controls-wrapper { background: #2b2b36; padding: 10px; border-radius: 8px; border: 2px solid #444; }
@@ -106,7 +131,7 @@
 
 <div class="modal" id="help-modal">
     <div class="modal-content">
-        <h2 style="color:#ff9f1c; margin-top:0;">📖 Foyer Rules (V25)</h2>
+        <h2 style="color:#ff9f1c; margin-top:0;">📖 Foyer Rules (V26)</h2>
         <ul style="padding-left: 20px; font-size:0.9rem;">
             <li><b>Power 1:</b> +1 Aim, Opponent gets 2 free hexes.</li>
             <li><b>Power 2:</b> +0 Aim, Opponent gets 1 free hex.</li>
@@ -160,24 +185,15 @@
         </div>
 
         <div class="board-wrapper">
-            <svg viewBox="0 0 260 460" xmlns="http://www.w3.org/2000/svg">
-                <g id="hex-layer"></g> 
+            <div class="board-container">
+                <svg class="board-svg" viewBox="0 0 260 460" xmlns="http://www.w3.org/2000/svg" id="svg-grid"></svg>
                 
-                <g id="t-p1" class="token-group">
-                    <circle r="14" fill="var(--p1-color)" stroke="white" stroke-width="2"/>
-                    <text text-anchor="middle" dy="4.5" font-size="13">🐱</text>
-                </g>
-                <g id="t-p2" class="token-group">
-                    <circle r="14" fill="var(--p2-color)" stroke="white" stroke-width="2"/>
-                    <text text-anchor="middle" dy="4.5" font-size="13">😼</text>
-                </g>
-                <circle id="t-ball" class="ball-group" r="6" fill="#ff9f1c" stroke="#333" stroke-width="1.5"/>
+                <div id="t-p1" class="token p1">🐱</div>
+                <div id="t-p2" class="token p2">😼</div>
+                <div id="t-ball" class="token ball"></div>
                 
-                <g id="dice-on-board" style="display:none; transition: transform 0.1s;">
-                    <rect x="-25" y="-25" width="50" height="50" class="dice-rect"/>
-                    <text id="dice-val" class="dice-text">6</text>
-                </g>
-            </svg>
+                <div id="dice-on-board" class="dice-overlay">?</div>
+            </div>
         </div>
     </div>
 
@@ -202,13 +218,14 @@
         <button class="btn-shoot" onclick="playTurn()" id="btn-shoot">Execute Swing</button>
     </div>
 
-    <div class="log-box" id="match-log">> Welcome to the Foyer. Board rendered natively. Mintzy serves.</div>
+    <div class="log-box" id="match-log">> Welcome to the Foyer. Layout completely bulletproofed. Mintzy serves.</div>
 
 </div>
 
 <script>
-    // --- EXACT SVG MATH (Native ViewBox) ---
-    const R = 20, W = Math.sqrt(3)*R, H = 2*R, COLS = 7, ROWS = 15; 
+    // --- NATIVE MATH FOR PERCENTAGE POSITIONING ---
+    const BASE_W = 260, BASE_H = 460;
+    const W = 34.641, H = 40, R = 20, COLS = 7, ROWS = 15; 
     
     let s = {
         p1: { id: 'Mintzy', x: 3, y: 14, score: 0, stam: 10, max: 10 },
@@ -222,25 +239,28 @@
         mod.style.display = mod.style.display === 'flex' ? 'none' : 'flex';
     }
 
-    function getHexCenter(c, r) { 
-        return { x: (c*W) + (r%2!==0 ? W/2 : 0) + W/2, y: (r*H*0.75) + H/2 }; 
+    // Converts grid coordinate to absolute percentages
+    function getHexPercent(c, r) { 
+        let cx = (c*W) + (r%2!==0 ? W/2 : 0) + W/2;
+        let cy = (r*H*0.75) + H/2;
+        return { x: (cx / BASE_W) * 100, y: (cy / BASE_H) * 100 }; 
     }
 
-    // NATIVE DOM CREATION (Bulletproof Rendering)
     function initBoard() {
-        const hexLayer = document.getElementById('hex-layer');
-        // Clear just in case
-        while (hexLayer.firstChild) { hexLayer.removeChild(hexLayer.firstChild); }
+        const svgGrid = document.getElementById('svg-grid');
+        while (svgGrid.firstChild) { svgGrid.removeChild(svgGrid.firstChild); }
 
         for(let r=0; r<ROWS; r++) {
             for(let c=0; c<COLS; c++) {
-                let center = getHexCenter(c, r);
+                let cx = (c*W) + (r%2!==0 ? W/2 : 0) + W/2;
+                let cy = (r*H*0.75) + H/2;
+                
                 let fill = c < 2 ? '#b5d0f5' : (c > 4 ? '#faeab0' : '#f0f0f0');
                 if(r < 3) fill = '#ffdfdf'; // Skirmish Zone
                 
                 let pts = [];
                 for(let i=0; i<6; i++) {
-                    pts.push(`${center.x + R * Math.cos(Math.PI/180 * (60*i-30))},${center.y + R * Math.sin(Math.PI/180 * (60*i-30))}`);
+                    pts.push(`${cx + R * Math.cos(Math.PI/180 * (60*i-30))},${cy + R * Math.sin(Math.PI/180 * (60*i-30))}`);
                 }
                 
                 let poly = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
@@ -248,28 +268,32 @@
                 poly.setAttribute("fill", fill);
                 poly.setAttribute("stroke", "#bbb");
                 poly.setAttribute("stroke-width", "1");
-                hexLayer.appendChild(poly);
+                svgGrid.appendChild(poly);
             }
         }
 
         // Return Line
-        let rLineY = getHexCenter(0, 8).y;
+        let rLineY = (8*H*0.75) + H/2;
         let line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-        line.setAttribute("x1", "0");
-        line.setAttribute("y1", rLineY);
-        line.setAttribute("x2", "260");
-        line.setAttribute("y2", rLineY);
-        line.setAttribute("stroke", "#333");
-        line.setAttribute("stroke-width", "2");
+        line.setAttribute("x1", "0"); line.setAttribute("y1", rLineY);
+        line.setAttribute("x2", "260"); line.setAttribute("y2", rLineY);
+        line.setAttribute("stroke", "#333"); line.setAttribute("stroke-width", "2");
         line.setAttribute("stroke-dasharray", "6,4");
-        hexLayer.appendChild(line);
+        svgGrid.appendChild(line);
     }
 
     function updateTokens() {
-        let p1 = getHexCenter(s.p1.x, s.p1.y), p2 = getHexCenter(s.p2.x, s.p2.y), b = getHexCenter(s.ball.x, s.ball.y);
-        document.getElementById('t-p1').setAttribute('transform', `translate(${p1.x}, ${p1.y})`);
-        document.getElementById('t-p2').setAttribute('transform', `translate(${p2.x}, ${p2.y})`);
-        document.getElementById('t-ball').setAttribute('transform', `translate(${b.x}, ${b.y})`);
+        let p1 = getHexPercent(s.p1.x, s.p1.y), p2 = getHexPercent(s.p2.x, s.p2.y), b = getHexPercent(s.ball.x, s.ball.y);
+        
+        // Manipulate Left/Top directly. The CSS translate(-50%,-50%) centers it.
+        document.getElementById('t-p1').style.left = p1.x + '%';
+        document.getElementById('t-p1').style.top = p1.y + '%';
+        
+        document.getElementById('t-p2').style.left = p2.x + '%';
+        document.getElementById('t-p2').style.top = p2.y + '%';
+        
+        document.getElementById('t-ball').style.left = b.x + '%';
+        document.getElementById('t-ball').style.top = b.y + '%';
     }
 
     function setTarget(code, tn, name) {
@@ -326,25 +350,24 @@
         p.stam = Math.max(0, p.stam - cost);
         p.x = s.ball.x; p.y = s.ball.y; updateTokens(); await sleep(500); 
 
-        // --- CINEMATIC DICE ROLL ---
+        // --- HTML CINEMATIC DICE ROLL ---
         const dice = document.getElementById('dice-on-board');
-        const diceVal = document.getElementById('dice-val');
-        dice.style.display = 'block';
-        dice.setAttribute('transform', `translate(130, 230) scale(0)`);
+        dice.style.display = 'flex';
+        dice.style.transform = `translate(-50%, -50%) scale(0)`;
         await sleep(50);
         
         let roll = 1;
         for(let d of [80, 150, 200, 300]) {
             roll = Math.floor(Math.random()*6)+1;
-            diceVal.textContent = roll;
+            dice.textContent = roll;
             let rot = (Math.random()*40)-20;
-            dice.setAttribute('transform', `translate(130, 230) rotate(${rot}) scale(1.2)`);
+            dice.style.transform = `translate(-50%, -50%) rotate(${rot}deg) scale(1.2)`;
             await sleep(d);
         }
-        dice.setAttribute('transform', `translate(130, 230) rotate(0) scale(1.5)`);
-        diceVal.style.fill = roll >= 5 ? '#06d6a0' : (roll <= 2 ? '#f72585' : '#000');
+        dice.style.transform = `translate(-50%, -50%) rotate(0deg) scale(1.5)`;
+        dice.style.color = roll >= 5 ? '#06d6a0' : (roll <= 2 ? '#f72585' : '#000');
         await sleep(800); 
-        dice.style.display = 'none'; diceVal.style.fill = '#000';
+        dice.style.display = 'none'; dice.style.color = '#000';
 
         // Math
         let isPeak = (p.stam === 10 && p.x >= 2 && p.x <= 4);
@@ -375,19 +398,4 @@
             
             sx = Math.max(0, Math.min(6, sx)); sy = Math.max(1, Math.min(14, sy));
 
-            let freeGiven = (power === 3 ? 0 : (power === 1 ? 2 : 1));
-            let oppDist = Math.max(Math.abs(opp.x - sx), Math.abs(opp.y - sy));
-            let oppCost = Math.max(0, oppDist - freeGiven);
-
-            if (oppCost > opp.stam) {
-                s.ball.x = sx; s.ball.y = sy; updateTokens(); await sleep(500);
-                log(`> <span style="color:#06d6a0">UNRETURNABLE!</span> ${opp.id} cannot reach it.`);
-                handleScore(p);
-            } else {
-                s.ball.x = sx; s.ball.y = sy; s.ball.free = freeGiven;
-                s.active = s.active === 1 ? 2 : 1;
-                log(`> ${p.id.toUpperCase()} hits ${s.targetName}.`);
-            }
-        } else {
-            log(`> ${p.id.toUpperCase()} pops the ball up.`);
-            s.ball.y = 12; s.ball.free = 2; s.active = s.active === 1
+            let freeGiven = (power === 3 ? 0 : (power === 1 
