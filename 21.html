@@ -3,14 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>21 Knob: Interactive Simulator V6</title>
+    <title>21 Knob: Interactive Simulator V7</title>
     <style>
         :root {
-            --lane-L: #8fb8ed; --lane-C: #e2e2e2; --lane-R: #f3db74;
+            --lane-L: #b5d0f5; --lane-C: #f0f0f0; --lane-R: #faeab0;
             --p1-color: #2a6fdb; --p2-color: #d62828;
             --wood: #8b5a2b; --bg-dark: #1e1e24;
-            /* Recalculated for 12 rows, slightly larger */
-            --hex-w: 36px; --hex-h: 28px; 
         }
 
         * { box-sizing: border-box; }
@@ -24,50 +22,49 @@
 
         .app-container {
             display: flex; flex-direction: row; flex-wrap: wrap;
-            gap: 15px; width: 100%; max-width: 900px; justify-content: center;
+            gap: 15px; width: 100%; max-width: 950px; justify-content: center;
         }
 
-        /* --- DASHBOARDS --- */
+        /* --- HEADER & DASHBOARDS --- */
         .header-row {
             display: flex; justify-content: space-between; width: 100%;
             align-items: center; background: #2b2b36; padding: 10px 20px;
             border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            border: 2px solid #444;
         }
         .player-card { flex: 1; text-align: center; }
-        .player-card h3 { margin: 0 0 5px 0; font-size: 1.1rem; }
-        .score { font-size: 1.6rem; font-weight: bold; line-height: 1; margin-bottom: 5px; }
-        .stam-text { font-size: 1rem; font-weight: bold; color: #06d6a0; }
+        .player-card h3 { margin: 0 0 5px 0; font-size: 1.1rem; text-transform: uppercase; }
+        .score { font-size: 1.8rem; font-weight: bold; line-height: 1; margin-bottom: 5px; }
+        .stam-text { font-size: 1.2rem; font-weight: bold; color: #06d6a0; }
         .stam-text.low { color: #d62828; }
         
         .btn-help {
             background: #ff9f1c; color: #000; font-weight: bold; font-size: 1.5rem;
-            width: 40px; height: 40px; border-radius: 50%; border: none;
-            cursor: pointer; box-shadow: 0 4px 0 #cc7a00;
+            width: 45px; height: 45px; border-radius: 50%; border: none;
+            cursor: pointer; box-shadow: 0 4px 0 #cc7a00; transition: transform 0.1s;
         }
         .btn-help:active { transform: translateY(4px); box-shadow: none; }
 
         /* --- PLAYING FIELD --- */
-        .center-column {
-            display: flex; flex-direction: column; align-items: center; gap: 10px;
-        }
+        .center-column { display: flex; flex-direction: column; align-items: center; gap: 10px; }
         .board-wrapper {
-            background: #fff; padding: 10px; border-radius: 12px;
+            background: #fff; padding: 15px; border-radius: 12px;
             border: 6px solid var(--wood); box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
-            display: flex; flex-direction: column; align-items: center; position: relative;
+            display: flex; flex-direction: column; align-items: center;
         }
 
-        /* --- INTERACTIVE DOOR --- */
+        /* --- INTERACTIVE DOOR TARGET --- */
         .door-ui {
-            width: 100%; max-width: 360px; height: 160px; background: #eab676; 
+            width: 100%; max-width: 280px; height: 160px; background: #eab676; 
             border: 10px solid #5a3818; border-radius: 4px; display: flex; 
-            flex-direction: column; gap: 8px; padding: 8px; position: relative; 
+            flex-direction: column; gap: 6px; padding: 6px; position: relative; 
             cursor: pointer; margin-bottom: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.5);
         }
         .door-ui.disabled { pointer-events: none; opacity: 0.8; }
         .door-panel {
             flex: 1; display: flex; align-items: center; justify-content: center;
             font-weight: bold; color: #000; border-radius: 2px; border: 3px solid transparent;
-            transition: all 0.2s; font-size: 0.9rem;
+            transition: all 0.2s; font-size: 0.85rem; letter-spacing: 0.5px;
         }
         .dp-top { background: #8fb8ed; }
         .dp-center { background: #f4a261; }
@@ -81,50 +78,39 @@
             position: absolute; left: 5px; top: 50%; transform: translateY(-50%);
             width: 55px; height: 55px; background: radial-gradient(circle, #ffe066, #d4af37);
             border-radius: 50%; border: 4px solid #8c7322; box-shadow: 3px 3px 8px rgba(0,0,0,0.6);
-            display: flex; align-items: center; justify-content: center; font-size: 0.9rem; 
+            display: flex; align-items: center; justify-content: center; font-size: 0.8rem; 
             color: #000; font-weight: bold; text-align: center; line-height: 1.1; transition: all 0.2s;
         }
         .door-knob:hover { transform: translateY(-50%) scale(1.05); }
         .knob-selected { border-color: #fff; box-shadow: 0 0 20px #fff, inset 0 0 10px #fff; transform: translateY(-50%) scale(1.15); z-index: 10;}
 
-        /* --- VISIBLE HEX GRID --- */
-        .hex-grid {
-            position: relative; width: 270px; height: 350px;
-            background: #555; /* Dark background acts as the grid lines */
-            border-radius: 8px; border: 2px solid #333;
+        /* --- SVG HEX GRID & TOKENS --- */
+        .svg-container {
+            position: relative; 
+            /* Dimensions dynamically set via JS based on Math */
+            background: rgba(0,0,0,0.02);
         }
-        .hex {
-            position: absolute; width: var(--hex-w); height: 38px;
-            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-            display: flex; align-items: center; justify-content: flex-start; padding-left: 5px;
-            font-size: 9px; color: rgba(0,0,0,0.3); font-weight: bold;
-            transition: background 0.2s;
-            transform: scale(0.94); /* THIS CREATES THE GRID SPACING */
-        }
-        .hex.lane-L { background-color: var(--lane-L); }
-        .hex.lane-C { background-color: var(--lane-C); }
-        .hex.lane-R { background-color: var(--lane-R); }
-
-        /* --- TOKENS --- */
+        
         .token {
             position: absolute; border-radius: 50%; z-index: 10;
             display: flex; align-items: center; justify-content: center;
-            font-weight: bold; color: white; font-size: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.5);
+            font-weight: bold; color: white; font-size: 11px; box-shadow: 0 4px 6px rgba(0,0,0,0.5);
             transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+            top: 0; left: 0; /* Base position, translated via JS */
         }
-        .p1 { width: 20px; height: 20px; background: var(--p1-color); border: 2px solid white; }
-        .p2 { width: 20px; height: 20px; background: var(--p2-color); border: 2px solid white; }
+        .p1 { width: 24px; height: 24px; background: var(--p1-color); border: 2px solid white; margin: -12px 0 0 -12px; }
+        .p2 { width: 24px; height: 24px; background: var(--p2-color); border: 2px solid white; margin: -12px 0 0 -12px; }
         .ball {
-            width: 12px; height: 12px; background: radial-gradient(circle at 30% 30%, #ffd166, #ff9f1c);
-            z-index: 15; transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); 
+            width: 14px; height: 14px; background: radial-gradient(circle at 30% 30%, #ffd166, #ff9f1c);
+            z-index: 15; transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); margin: -7px 0 0 -7px;
         }
 
         /* --- CONTROLS --- */
         .controls {
-            background: #2b2b36; padding: 15px; border-radius: 8px;
+            background: #2b2b36; padding: 15px; border-radius: 8px; border: 2px solid #444;
             width: 320px; display: flex; flex-direction: column; gap: 12px;
         }
-        .turn-banner { font-size: 1.4rem; font-weight: bold; text-align: center; margin: 0; }
+        .turn-banner { font-size: 1.4rem; font-weight: bold; text-align: center; margin: 0; text-transform: uppercase; letter-spacing: 1px;}
         
         .math-box {
             background: #111; border: 2px solid #ff9f1c; border-radius: 6px; padding: 10px;
@@ -135,36 +121,37 @@
 
         .dice-container {
             display: flex; align-items: center; justify-content: center; gap: 15px;
-            background: #1e1e24; padding: 15px; border-radius: 8px;
+            background: #1e1e24; padding: 15px; border-radius: 8px; border: 1px solid #333;
         }
         .dice {
-            width: 60px; height: 60px; background: #fff; color: #000;
-            border-radius: 8px; display: flex; align-items: center; justify-content: center;
-            font-size: 2.5rem; font-weight: bold; box-shadow: inset 0 0 10px rgba(0,0,0,0.2), 0 4px 8px rgba(0,0,0,0.5);
+            width: 65px; height: 65px; background: #fff; color: #000;
+            border-radius: 10px; display: flex; align-items: center; justify-content: center;
+            font-size: 2.8rem; font-weight: bold; box-shadow: inset 0 0 15px rgba(0,0,0,0.2), 0 4px 8px rgba(0,0,0,0.5);
         }
 
-        .info-panel { background: #1e1e24; padding: 10px; border-radius: 6px; border-left: 4px solid #ff9f1c; font-size: 0.9rem;}
+        .info-panel { background: #1e1e24; padding: 10px; border-radius: 6px; border-left: 4px solid #ff9f1c; font-size: 0.95rem; line-height: 1.5;}
         select, button { width: 100%; padding: 12px; font-size: 1rem; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; }
-        button.primary { background: #ff9f1c; color: #000; text-transform: uppercase; box-shadow: 0 4px 0 #cc7a00; }
+        button.primary { background: #ff9f1c; color: #000; text-transform: uppercase; box-shadow: 0 4px 0 #cc7a00; font-size: 1.1rem;}
         button.primary:active { transform: translateY(4px); box-shadow: none; }
         button:disabled { background: #555; color: #888; box-shadow: none; cursor: not-allowed; }
         button.secondary { background: #555; color: white; margin-top: -5px; }
 
-        .log { background: #111; height: 160px; overflow-y: auto; padding: 10px; font-size: 0.85rem; border-radius: 6px; color: #aaa; line-height: 1.4; }
+        .log { background: #111; height: 140px; overflow-y: auto; padding: 10px; font-size: 0.9rem; border-radius: 6px; color: #ccc; line-height: 1.4; border: 1px solid #333;}
         .log b { color: #ff9f1c; }
 
         /* --- MODAL --- */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 100;
+            background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 100;
         }
         .modal-content {
-            background: #2b2b36; padding: 20px; border-radius: 12px; width: 90%; max-width: 500px;
-            max-height: 90vh; overflow-y: auto; border: 4px solid var(--wood);
+            background: #2b2b36; padding: 25px; border-radius: 12px; width: 90%; max-width: 550px;
+            max-height: 90vh; overflow-y: auto; border: 4px solid var(--wood); font-size: 1.05rem;
         }
-        .modal-content h2 { color: #ff9f1c; margin-top: 0; }
+        .modal-content h2 { color: #ff9f1c; margin-top: 0; font-size: 1.8rem;}
         .modal-content ul { padding-left: 20px; line-height: 1.6; }
-        .close-btn { background: #d62828; color: white; margin-top: 15px; }
+        .modal-content li { margin-bottom: 8px; }
+        .close-btn { background: #d62828; color: white; margin-top: 20px; font-size: 1.1rem; padding: 15px;}
     </style>
 </head>
 <body>
@@ -172,26 +159,27 @@
 <div class="modal-overlay" id="rules-modal">
     <div class="modal-content">
         <h2>21 Knob: Strategy & Rules</h2>
-        <b>The Goal:</b> Score exactly 21 points, then hit the "Victory Knob" to win.
-        <hr style="border-color:#444">
+        <p><b>The Goal:</b> Score exactly 21 points, then hit the "Victory Knob" to win.</p>
+        <hr style="border-color:#444; margin: 15px 0;">
         <b>1. Power Levels (Risk vs. Reward)</b>
         <ul>
-            <li><b>Power 1 (Lob):</b> +1 to your dice roll, but gives the opponent 3 free hexes of movement.</li>
+            <li><b>Power 1 (Lob):</b> +1 to your dice roll, but gives the opponent 3 free hexes of movement to reach it easily.</li>
             <li><b>Power 2 (Drive):</b> Normal shot. Opponent gets 1 free hex.</li>
-            <li><b>Power 3 (Bullet):</b> -2 to your dice roll! But the opponent gets 0 free hexes. Every step costs stamina.</li>
+            <li><b>Power 3 (Bullet):</b> -2 to your dice roll! But the opponent gets 0 free hexes. Every step costs them precious stamina.</li>
         </ul>
         <b>2. Stamina & Penalties</b>
         <ul>
             <li>Moving costs Stamina. If you move 3+ hexes in a turn, you are <b>Exhausted (-1 to roll)</b>.</li>
             <li>If you have no stamina left, you must <b>Dive (Stamina=0, forced Power 1, -2 penalty)</b>.</li>
-            <li>Shooting from the far Left/Right lane imposes an <b>Off-Axis (-1)</b> penalty.</li>
+            <li>Shooting from the far Left or Right lane imposes an <b>Off-Axis (-1)</b> penalty.</li>
+            <li><i>The Smash:</i> If your opponent hits a "High" ball, you can use Power 3 with ZERO penalty!</li>
         </ul>
         <b>3. The Door Targets</b>
         <ul>
             <li><b>Center (TN 2+):</b> Safe. <b>Bottom (TN 4+):</b> Hard drop shot.</li>
             <li><b>The Knob (TN 6):</b> Scores 3 Points! If penalties make a 6 impossible, you can "Push the Limit" and pray for a Natural 6.</li>
         </ul>
-        <button class="close-btn" onclick="toggleRules()">Close Rules</button>
+        <button class="close-btn" onclick="toggleRules()">Close Rules & Play</button>
     </div>
 </div>
 
@@ -201,26 +189,26 @@
             <div class="player-card">
                 <h3 style="color: var(--p1-color)">PLAYER 1</h3>
                 <div class="score" id="p1-score">0</div>
-                <div>Stam: <span class="stam-text" id="p1-stam">10</span></div>
+                <div>Stamina: <span class="stam-text" id="p1-stam">10</span></div>
             </div>
             <button class="btn-help" onclick="toggleRules()">?</button>
             <div class="player-card">
                 <h3 style="color: var(--p2-color)">PLAYER 2</h3>
                 <div class="score" id="p2-score">0</div>
-                <div>Stam: <span class="stam-text" id="p2-stam">10</span></div>
+                <div>Stamina: <span class="stam-text" id="p2-stam">10</span></div>
             </div>
         </div>
 
         <div class="board-wrapper">
             <div class="door-ui" id="door-ui" onclick="selectFrame(event)">
-                <div class="door-panel dp-top" id="dp-Top" onclick="setTarget('Top', event)">TOP (TN 3+)</div>
-                <div class="door-panel dp-center selected" id="dp-Center" onclick="setTarget('Center', event)">CENTER (TN 2+)</div>
-                <div class="door-panel dp-bottom" id="dp-Bottom" onclick="setTarget('Bottom', event)">BOTTOM (TN 4+)</div>
+                <div class="door-panel dp-top" id="dp-Top" onclick="setTarget('Top', event)">TOP PANEL (TN 3+)</div>
+                <div class="door-panel dp-center selected" id="dp-Center" onclick="setTarget('Center', event)">CENTER PANEL (TN 2+)</div>
+                <div class="door-panel dp-bottom" id="dp-Bottom" onclick="setTarget('Bottom', event)">BOTTOM PANEL (TN 4+)</div>
                 <div class="door-knob" id="dp-Knob" onclick="setTarget('Knob', event)">GO FOR<br>KNOB!<br>(TN 6)</div>
-                <div style="position: absolute; bottom: -22px; width: 100%; text-align: center; color: #222; font-weight: bold; font-size: 0.75rem; pointer-events: none;">Click wood edges for FRAME (TN 5+)</div>
+                <div style="position: absolute; bottom: -24px; width: 100%; text-align: center; color: #222; font-weight: bold; font-size: 0.8rem; pointer-events: none;">Click wood edges for FRAME (TN 5+)</div>
             </div>
 
-            <div class="hex-grid" id="grid">
+            <div class="svg-container" id="board-container">
                 <div id="t-p1" class="token p1">1</div>
                 <div id="t-p2" class="token p2">2</div>
                 <div id="t-ball" class="token ball"></div>
@@ -233,15 +221,15 @@
         
         <div class="info-panel">
             <b>Incoming Ball:</b> <span id="ui-state">Mid</span><br>
-            <b>Cost to Reach:</b> <span id="ui-cost">0</span> Stamina
+            <b>Distance Cost:</b> <span id="ui-cost">0</span> Stamina
         </div>
 
         <div>
-            <label style="font-size: 0.85rem; color: #aaa;">Swing Power:</label>
+            <label style="font-size: 0.85rem; color: #aaa; text-transform: uppercase;">Swing Power:</label>
             <select id="sel-power" onchange="updateMath()">
-                <option value="1">Power 1 (+1 Acc, Opp Gets 3 Moves)</option>
-                <option value="2" selected>Power 2 (0 Acc, Opp Gets 1 Move)</option>
-                <option value="3">Power 3 (-2 Acc, Opp Gets 0 Moves)</option>
+                <option value="1">Power 1 (+1 Acc, Opp Gets 3 Free Moves)</option>
+                <option value="2" selected>Power 2 (0 Acc, Opp Gets 1 Free Move)</option>
+                <option value="3">Power 3 (-2 Acc, Opp Gets 0 Free Moves)</option>
             </select>
         </div>
 
@@ -252,9 +240,9 @@
 
         <div class="dice-container">
             <div class="dice" id="dice-visual">?</div>
-            <div style="font-size: 0.85rem; color: #aaa;">
-                Target: <b id="ui-target-text" style="color: white;">Center Panel</b><br>
-                Modified Req: <b id="ui-tn" style="color: #ff9f1c;">TN 2+</b>
+            <div style="font-size: 0.95rem; color: #aaa; line-height: 1.4;">
+                Aiming at:<br><b id="ui-target-text" style="color: white; font-size: 1.1rem;">Center Panel</b><br>
+                Roll Req: <b id="ui-tn" style="color: #ff9f1c; font-size: 1.1rem;">TN 2+</b>
             </div>
         </div>
 
@@ -262,21 +250,25 @@
 
         <div style="margin-top: auto; border-top: 1px solid #444; padding-top: 10px;">
             <select id="sel-p2-mode">
-                <option value="human">Pass & Play</option>
-                <option value="ai-balanced" selected>Play vs. AI</option>
+                <option value="human">Pass & Play (2 Player)</option>
+                <option value="ai-balanced" selected>Play vs. AI Opponent</option>
             </select>
         </div>
     </div>
 </div>
 
 <script>
-    // Reduced to 12 rows!
-    const COLS = 7, ROWS = 12, HEX_W = 36, HEX_H = 28; 
+    // --- SVG BOARD MATH & RENDERING ---
+    const R = 20; // Radius of Hexagon
+    const W = Math.sqrt(3) * R; // Width approx 34.64
+    const H = 2 * R; // Height 40
+    const COLS = 7;
+    const ROWS = 15; // Restored to 15!
 
     let s = {
-        p1: { id: 'P1', x: 3, y: 11, score: 0, stam: 10 },
-        p2: { id: 'P2', x: 3, y: 9, score: 0, stam: 10 },
-        ball: { x: 3, y: 11, state: 'Mid', freeMv: 3 },
+        p1: { id: 'P1', x: 3, y: 14, score: 0, stam: 10 },
+        p2: { id: 'P2', x: 3, y: 12, score: 0, stam: 10 },
+        ball: { x: 3, y: 14, state: 'Mid', freeMv: 3 },
         active: 1, isAnimating: false, target: 'Center'
     };
 
@@ -285,28 +277,71 @@
         mod.style.display = mod.style.display === 'flex' ? 'none' : 'flex';
     }
 
-    function buildGrid() {
-        const grid = document.getElementById('grid');
-        for(let y=0; y<ROWS; y++) {
-            for(let x=0; x<COLS; x++) {
-                let hex = document.createElement('div');
-                hex.className = 'hex ' + (x < 2 ? 'lane-L' : (x > 4 ? 'lane-R' : 'lane-C'));
-                hex.style.left = (x * HEX_W + (y % 2 !== 0 ? HEX_W / 2 : 0)) + 'px';
-                hex.style.top = (y * HEX_H) + 'px';
-                if(x===0) hex.innerHTML = y+1; // Subtle row markers
-                grid.appendChild(hex);
-            }
-        }
+    // Get center pixel coordinates for a hex at (col, row)
+    function getHexCenter(c, r) {
+        let cx = (c * W) + (r % 2 !== 0 ? W/2 : 0) + W/2;
+        let cy = (r * H * 0.75) + H/2;
+        return {x: cx, y: cy};
     }
 
-    function getPixelCoords(x, y, type = 'token') {
+    // Generate points string for SVG polygon
+    function getHexPoints(cx, cy) {
+        let pts = [];
+        for(let i=0; i<6; i++) {
+            let angle_rad = Math.PI / 180 * (60 * i - 30); // Pointy topped
+            pts.push(`${cx + R * Math.cos(angle_rad)},${cy + R * Math.sin(angle_rad)}`);
+        }
+        return pts.join(" ");
+    }
+
+    function buildSVGBoard() {
+        const container = document.getElementById('board-container');
+        
+        // Calculate total required dimensions
+        let totalW = (COLS * W) + (W/2);
+        let totalH = (ROWS * H * 0.75) + (H * 0.25);
+        
+        container.style.width = totalW + 'px';
+        container.style.height = totalH + 'px';
+
+        let svgHtml = `<svg width="${totalW}" height="${totalH}" xmlns="http://www.w3.org/2000/svg">`;
+        
+        for(let r=0; r<ROWS; r++) {
+            for(let c=0; c<COLS; c++) {
+                let center = getHexCenter(c, r);
+                let points = getHexPoints(center.x, center.y);
+                
+                // Determine color
+                let fill = 'var(--lane-C)';
+                if (c < 2) fill = 'var(--lane-L)';
+                else if (c > 4) fill = 'var(--lane-R)';
+
+                svgHtml += `<polygon points="${points}" fill="${fill}" stroke="#888" stroke-width="1.5"/>`;
+                
+                // Add tiny row numbers to the far left lane for distance tracking
+                if (c === 0) {
+                    svgHtml += `<text x="${center.x - 12}" y="${center.y + 3}" fill="rgba(0,0,0,0.3)" font-size="9" font-weight="bold">${r+1}</text>`;
+                }
+            }
+        }
+        
+        // Add Return & Serve Lines
+        let returnLineY = getHexCenter(0, 7).y; // Bisecting line around row 8
+        svgHtml += `<line x1="0" y1="${returnLineY}" x2="${totalW}" y2="${returnLineY}" stroke="#333" stroke-width="3" stroke-dasharray="8,4" />`;
+        
+        let serveLineY = getHexCenter(0, 13).y - H/2;
+        svgHtml += `<line x1="0" y1="${serveLineY}" x2="${totalW}" y2="${serveLineY}" stroke="#fca311" stroke-width="5" />`;
+
+        svgHtml += `</svg>`;
+        
+        // Insert SVG behind tokens
+        container.insertAdjacentHTML('afterbegin', svgHtml);
+    }
+
+    // --- POSITIONS ---
+    function getPixelCoords(c, r, type = 'token') {
         if(type === 'door') return { x: 120, y: -60 }; 
-        let px = x * HEX_W + (y % 2 !== 0 ? HEX_W / 2 : 0);
-        let py = y * HEX_H;
-        // Center dynamically based on new sizing
-        let offX = type === 'ball' ? (36-12)/2 : (36-20)/2;
-        let offY = type === 'ball' ? (38-12)/2 : (38-20)/2;
-        return { x: px + offX, y: py + offY };
+        return getHexCenter(c, r); // Center of the hex! Tokens are adjusted via CSS margin
     }
 
     function updateTokens() {
@@ -359,7 +394,7 @@
         if(cost >= 3) mod -= 1; 
         if(s.ball.x < 2 || s.ball.x > 4) mod -= 1; 
         if(s.ball.state === 'Low' && s.target !== 'Bottom') mod -= 2; 
-        if(s.ball.state === 'High' && power === 3) mod += 0; 
+        if(s.ball.state === 'High' && power === 3) mod += 0; // Smash
         else if(power === 3) mod -= 2;
         else if(power === 1) mod += 1;
         return mod;
@@ -414,4 +449,111 @@
         
         let mathBox = document.getElementById('math-box');
         mathBox.style.display = 'flex';
-      
+        mathBox.innerHTML = `<div style="color:#aaa">Base TN ${tnBase} | Modifiers: ${mod >= 0 ? '+'+mod : mod}</div>
+                             <div style="font-size:1.4rem; color:#fff">Roll Required: <b>${finalReq > 6 && s.target === 'Knob' ? 'Natural 6!' : finalReq}</b></div>`;
+        
+        await sleep(1500);
+        mathBox.style.display = 'none';
+
+        let roll = Math.floor(Math.random()*6)+1;
+        const dice = document.getElementById('dice-visual');
+        let delays = [50, 50, 50, 100, 100, 150, 200, 300, 400]; 
+        for(let d of delays) {
+            let temp = Math.floor(Math.random()*6)+1;
+            dice.innerText = temp;
+            dice.style.transform = `rotate(${(Math.random()*20)-10}deg)`;
+            await sleep(d);
+        }
+        dice.style.transform = `rotate(0deg)`;
+        dice.innerText = roll;
+        dice.style.color = (roll >= 5) ? '#2a9d8f' : (roll <= 2 ? '#d62828' : '#000');
+        
+        let total = roll + mod;
+        log(`${p.id} aims ${s.target}. Rolled <b>${roll}</b> (Total ${total}).`);
+        
+        await sleep(800);
+
+        let bDoor = getPixelCoords(0, 0, 'door');
+        document.getElementById('t-ball').style.transform = `translate(${bDoor.x}px, ${bDoor.y}px)`;
+        
+        await sleep(800); 
+
+        // SCATTER LOGIC FOR 15 ROWS
+        if (total <= 0) {
+            log(`<b>WHIFF!</b> Hit the wall. ${opp.id} scores!`);
+            handleScore(opp);
+        } else if (total < tnBase && !(s.target === 'Knob' && roll === 6)) { 
+            log(`<b>FAIL.</b> Ball pops High!`);
+            s.ball.state = 'High'; s.ball.freeMv = 3; scatterBall(10, 14); s.active = s.active === 1 ? 2 : 1;
+        } else {
+            if(s.target === 'Knob' || (s.target === 'Center' && p.x >=2 && p.x <=4 && roll === 6)) {
+                log(`<b>DING!</b> THE KNOB! 3 Points!`);
+                handleScore(p, 3);
+            } else {
+                log(`<b>SOLID HIT.</b>`);
+                if(s.target === 'Top') { s.ball.state = 'High'; scatterBall(10, 14); }
+                if(s.target === 'Center') { s.ball.state = 'Mid'; scatterBall(5, 9); }
+                if(s.target === 'Bottom') { s.ball.state = 'Low'; scatterBall(1, 3); }
+                if(s.target === 'Frame') { s.ball.state = 'Mid'; scatterBall(2, 12); }
+                
+                s.ball.freeMv = power === 1 ? 3 : (power === 2 ? 1 : 0);
+                s.active = s.active === 1 ? 2 : 1; 
+            }
+        }
+
+        updateTokens(); renderUI();
+        await sleep(600);
+        
+        s.isAnimating = false;
+        if (s.active === 1) setButtons(false);
+        else triggerAI();
+    }
+
+    function scatterBall(minY, maxY) {
+        s.ball.y = Math.floor(Math.random() * (maxY - minY + 1)) + minY;
+        s.ball.x = Math.max(0, Math.min(6, s.ball.x + Math.floor(Math.random() * 3) - 1));
+    }
+
+    function handleScore(winner, pts = 1) {
+        if(winner.score === 21 && pts !== 3) log(`Must hit Knob to win!`);
+        else winner.score = Math.min(21, winner.score + pts); 
+        
+        s.ball.x = 3; s.ball.y = 14; s.ball.state = 'Mid'; s.ball.freeMv = 3;
+        s.p1.x = 3; s.p1.y = 14; s.p2.x = 4; s.p2.y = 14;
+        s.active = winner === s.p1 ? 1 : 2; 
+    }
+
+    function catchBreath() {
+        if(s.isAnimating) return;
+        let p = s.active === 1 ? s.p1 : s.p2;
+        p.stam = Math.min(10, p.stam + 3);
+        log(`<b>${p.id} skips turn</b> to catch breath!`);
+        s.ball.state = 'High'; s.ball.freeMv = 3; 
+        s.active = s.active === 1 ? 2 : 1;
+        renderUI();
+        if (s.active === 1) setButtons(false); else triggerAI();
+    }
+
+    async function triggerAI() {
+        let mode = document.getElementById('sel-p2-mode').value;
+        if (mode === 'human' || s.active === 1) return;
+        setButtons(true);
+        await sleep(1000);
+        
+        let cost = Math.max(0, Math.max(Math.abs(s.p2.x - s.ball.x), Math.abs(s.p2.y - s.ball.y)) - s.ball.freeMv);
+        let target = 'Center', power = 2;
+        if (s.p2.score >= 18) { target = 'Knob'; power = 1; }
+        else if (cost > s.p2.stam) { target = 'Center'; power = 1; }
+        else if (s.ball.state === 'High') { power = 3; target = Math.random() > 0.5 ? 'Bottom' : 'Frame'; }
+        else { power = 2; target = Math.random() > 0.5 ? 'Center' : 'Bottom'; }
+
+        document.getElementById('sel-power').value = power;
+        setTarget(target, null);
+        await sleep(1000);
+        playTurn();
+    }
+
+    buildSVGBoard(); updateTokens(); renderUI();
+</script>
+</body>
+</html>
